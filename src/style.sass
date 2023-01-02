@@ -1,0 +1,86 @@
+@import "reset.sass"
+@import "pico.min.css"
+
+[data-theme="light"],
+:root:not([data-theme="dark"])
+  --primary: #757575
+  --primary-hover: #616161
+  --primary-focus: rgba(117, 117, 117, 0.125)
+  --primary-inverse: #FFF
+
+.fa
+  font-size: 1.5rem
+
+
+$background: #e8e2d6
+$roads: #d3c1a2
+$red: #d92028
+$river: #1d8f94
+$blue: #2a5d9e
+$yellow: #f5aa30
+
+svg
+  display: inline-block
+  position: absolute
+  background-color: white
+
+#nav
+  position: absolute
+  left: 0
+  top: 0
+  right: 0
+  padding: .2em
+
+  border-bottom: 1px solid #beccc7
+
+  background-color: #f8f8f8
+
+  display: flex
+  flex-direction: row
+  align-items: stretch
+  gap: .5em
+  & > *
+    display: block
+  .hr
+    display: block
+    margin: .5em 0
+    border-left: 1px solid #e1e5e5
+
+  [role=button]
+    border: none
+    &:hover, &:focus
+      background-color: #e8edeb
+
+
+#stations > *
+  fill: #fff
+  stroke: #433936
+  stroke-width: 5px
+
+  &.selected
+    fill: #d3d3d3
+
+#edges > *
+  stroke: $red
+  stroke-width: 6px
+  stroke-linejoin: round
+
+#city
+  fill: none
+  stroke: $blue
+  stroke-width: 10px
+  stroke-linejoin: round
+  stroke-linecap: round
+
+
+text
+  font-variant-caps: all-small-caps
+  //text-transform: lowercase
+  letter-spacing: -.2ex
+  stroke: white
+  stroke-width: 0.4em
+  fill: $blue
+  font-stretch: extra-condensed
+  paint-order: stroke
+  stroke-linejoin: round
+  alignment-baseline: middle
