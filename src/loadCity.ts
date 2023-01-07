@@ -1,14 +1,8 @@
-import {computeLayout, Edge, Station} from "./graph"
+import {computeLayout} from "./layout"
 import {FeatureCollection, GeoJSON, GeoJsonObject} from "geojson"
 import * as d3 from "d3"
 import {Vec} from "./vec"
-
-function loadLargeJSON(path: string): any {
-  // We want the file to be loaded but not parsed by smart completion features.
-  // @ts-ignore
-  return require(path)
-}
-
+import {Model} from "./model"
 
 function roundPosition(x: number, y: number, r: number = 8): [number, number] {
   return [Math.round(x / r) * r, Math.round(y / r) * r]
@@ -35,18 +29,18 @@ function getProjection(rawProjection: (x: number, y: number) => [number, number]
   })
 }
 
-function extractName(name: string) {
-  if (name == "") return "?"
-  let match = name.match(/^(.*?)[ 0-9]*$/)[1]
+function extractStationName(osmName: string) {
+  if (osmName == "") return "?"
+  let match = osmName.match(/^(.*?)[ 0-9]*$/)[1]
   return match.replace("Warszawa", "Wawa")
 }
 
-function extractRouteName(name: string) {
-  let match_1 = name.match(/^(.*?):/)
-  if (match_1) name = match_1[1]
-  let match_2 = name.match(/Tram ([0-9]+)/)
-  if (match_2) name = match_2[1]
-  return name
+function extractRouteName(osmName: string) {
+  let match_1 = osmName.match(/^(.*?):/)
+  if (match_1) osmName = match_1[1]
+  let match_2 = osmName.match(/Tram ([0-9]+)/)
+  if (match_2) osmName = match_2[1]
+  return osmName
 }
 
 function routesMatch<T>(a: T[], b: T[]) {
@@ -58,10 +52,12 @@ function routesMatch<T>(a: T[], b: T[]) {
   return true
 }
 
-export function loadCity(): [Station[], Edge[]] {
-  let stations: Station[] = []
-  let edges: Edge[] = []
+function randomColor() {
+  return `hsl(${Math.random() * 360}, 73%, 62%)`
+}
 
+
+export function loadCity(map: Model.Diagram) {
   type RelationMember = { ref: number, role: string }
   type Relation = { id: string, members: RelationMember[] }
   type RelationsJSON = { elements: Relation[] }
@@ -71,9 +67,9 @@ export function loadCity(): [Station[], Edge[]] {
   let routeIdToStationIds: Map<number, number[]> = new Map()
   let relevantFeatures: Set<number> = new Set()
   for (let route of routes.elements) {
-    let stationIds = []
+    let stationIds: number[] = []
     for (let member of route.members) {
-      if (member.role != "stop") continue
+      if (member.role.search("stop")) continue
       stationIds.push(member.ref)
       relevantFeatures.add(member.ref)
     }
@@ -100,16 +96,16 @@ export function loadCity(): [Station[], Edge[]] {
       continue
     }
     if (!relevantFeatures.has(id)) continue
-    let name = extractName(properties.name)
+    let name = extractStationName(properties.name)
     stationIdToName.set(id, name)
 
     if (!stationNameToPositions.has(name)) stationNameToPositions.set(name, [])
     if (feature.geometry.type == "Polygon") {
       for (let i of feature.geometry.coordinates) {
-        stationNameToPositions.get(name).push(...i)
+        stationNameToPositions.get(name)?.push(...i)
       }
     } else if (feature.geometry.type == "Point") {
-      stationNameToPositions.get(name).push(feature.geometry.coordinates)
+      stationNameToPositions.get(name)?.push(feature.geometry.coordinates)
     }
   }
   console.log(relevantFeatures)
@@ -117,19 +113,20 @@ export function loadCity(): [Station[], Edge[]] {
 
   let transform = getRawProjection()
 
-  let stationNameToObject = new Map<string, Station>()
+  let stationNameToObject = new Map<string, Model.Station>()
 
   for (let [name, positions] of stationNameToPositions.entries()) {
     if (positions.length < 1) continue
     let [sumX, sumY] = positions.reduce(([x_1, y_1], [x_2, y_2]) => [x_1 + x_2, y_1 + y_2])
     let averageX = sumX / positions.length, averageY = sumY / positions.length
     let position = Vec.pair(...transform(averageX, averageY))
-    stationNameToObject.set(name, new Station(position, name))
+    stationNameToObject.set(name, new Model.Station(position, name))
   }
 
-  let uniqueRoutes: Station[][] = []
-  for (let [_, stationsInRoute] of routeIdToStationIds) {
-    let route = []
+  let usedRoutes: string[] = []
+  let uniqueRoutes: Model.Station[][] = []
+  for (let [routeId, stationsInRoute] of routeIdToStationIds) {
+    let route: Model.Station[] = []
     for (let stationId of stationsInRoute) {
       let stationName = stationIdToName.get(stationId)
       if (!stationName) continue
@@ -138,23 +135,30 @@ export function loadCity(): [Station[], Edge[]] {
       route.push(stationObject)
     }
 
-    let isUnique = true
-    for (let i of uniqueRoutes) {
-      if (routesMatch(route, i)) isUnique = false
-    }
-    if (isUnique)
+    console.log(routeIdToRouteName.get(routeId))
+    let isUnique = usedRoutes.indexOf(routeIdToRouteName.get(routeId) as string) === -1
+
+    if (isUnique) {
       uniqueRoutes.push(route)
+      usedRoutes.push(routeIdToRouteName.get(routeId) as string)
+    }
   }
   console.log(uniqueRoutes)
 
   for (let stationsInRoute of uniqueRoutes) {
-    for (let i = 0; i + 1 < stationsInRoute.length; ++i) {
-      let a = stationsInRoute[i], b = stationsInRoute[i + 1]
-      if (a == b) continue
-      edges.push(new Edge(a, b))
+    let color = randomColor()
+    let group = new Model.Group(color)
+    let route = new Model.Route(group)
+    map.addRoute(route)
+    console.log(stationsInRoute)
+    let last = stationsInRoute[0]
+    route.pushStation(last, null)
+    for (let i = 1; i < stationsInRoute.length; ++i) {
+      if (stationsInRoute[i] == last) continue
+      let a = last, b = stationsInRoute[i]
+      route.pushStation(b, new Model.Edge())
+      last = b
     }
   }
-
-  return [[...stationNameToObject.values()], edges]
 }
 

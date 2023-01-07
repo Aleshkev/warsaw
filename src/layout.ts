@@ -1,63 +1,27 @@
 import {
   alignAngle,
-  DiagramAlignment,
-
-  xy,
-  unalignAngle,
   Angle,
   diagramAlignmentAngles,
   pointsFromAlignmentAngles,
   radToDeg,
+  unalignAngle,
+  xy,
 } from "./geo"
-import * as d3 from "d3"
-import * as vec from "./vec"
 import {Vec} from "./vec"
-
-export class Station {
-  center: xy
-  name: string
-
-  constructor(center: xy, name: string = "?") {
-    this.center = center
-    this.name = name
-  }
-}
-
-export class Edge {
-  // These are determined by position in the line.
-  readonly a: Station
-  readonly b: Station
-  alignment: DiagramAlignment
-
-  constructor(a: Station, b: Station) {
-    this.a = a
-    this.b = b
-  }
-}
-
-export class Line {
-
-  // There are always n stations and n - 1 edges.
-  stations: Station[]
-  edges: Edge[]
-
-
-  constructor() {
-  }
-}
+import {Model} from "./model"
 
 export class StationLayout {
-  station: Station
-  incomingEdges: EdgeLayout[][]
-  nSlots: number[]
+  station: Model.Station
+  // incomingEdges: EdgeLayout[][]
+  // nSlots: number[]
 
-  size: xy
-  rotation: Angle = {a: 0}
+  // size: xy
+  // rotation: Angle = {a: 0}
 
 
-  constructor(station: Station) {
+  constructor(station: Model.Station) {
     this.station = station
-    this.incomingEdges = Array(8).fill(0).map(() => [])
+    // this.incomingEdges = Array(8).fill(0).map(() => [])
   }
 
   private roundedRectanglePath(a: xy, b: xy, r: number = 6) {
@@ -80,37 +44,38 @@ export class StationLayout {
     let padding = Vec.pair(6, 6)
     // return this.circlePath(Vec.sub(this.boundsMin[0], padding),
     // Vec.add(this.boundsMax[0], padding));
-    let halfSize = Vec.add(Vec.mul(this.size, .5), padding)
-    // let halfSize = Vec.pair(14, 14)
-    // return this.roundedRectanglePath(Vec.sub(this.station.center, halfSize), Vec.add(this.station.center, halfSize), 14)
-    return this.roundedRectanglePath(Vec.sub(this.station.center, halfSize), Vec.add(this.station.center, halfSize), 6)
+    // let halfSize = Vec.add(Vec.mul(this.size, .5), padding)
+    let halfSize = Vec.pair(14, 14)
+    // return this.roundedRectanglePath(Vec.sub(this.station.center, halfSize),
+    // Vec.add(this.station.center, halfSize), 14)
+    return this.roundedRectanglePath(Vec.sub(this.station.position, halfSize), Vec.add(this.station.position, halfSize), 6)
   }
 
   getSVGTransform() {
-    console.log(radToDeg(this.rotation.a))
-    return `rotate(${radToDeg(this.rotation.a)}, ${this.station.center.x} ${this.station.center.y})`
+    return ""
+    // console.log(radToDeg(this.rotation.a))
+    // return `rotate(${radToDeg(this.rotation.a)}, ${this.station.position.x} ${this.station.position.y})`
   }
 }
 
 
 export class EdgeLayout {
-  edge: Edge
+  edge: Model.Edge
   aLayout: StationLayout
   bLayout: StationLayout
 
   angles: Angle[]
-  points: xy[]
 
 
   assignedShiftA: xy
   assignedShiftB: xy
 
-  constructor(edge: Edge, aLayout: StationLayout, bLayout: StationLayout) {
+  constructor(edge: Model.Edge, aLayout: StationLayout, bLayout: StationLayout) {
     this.edge = edge
     this.aLayout = aLayout
     this.bLayout = bLayout
 
-    this.angles = diagramAlignmentAngles(edge.a.center, edge.b.center, edge.alignment)
+    // this.angles = diagramAlignmentAngles(edge.a.center, edge.b.center, edge.alignment)
     // this.basePoints = alignAsDiagram(edge.a.center, edge.b.center,
     // edge.alignment) console.log(this.basePoints)
 
@@ -118,12 +83,20 @@ export class EdgeLayout {
     let slotDirectionA = alignAngle(this.angles[0])
     let slotDirectionB = alignAngle({a: this.angles[this.angles.length - 1].a + Math.PI})
 
-    this.aLayout.incomingEdges[slotDirectionA.dA].push(this)
-    this.bLayout.incomingEdges[slotDirectionB.dA].push(this)
+    // this.aLayout.incomingEdges[slotDirectionA.dA].push(this)
+    // this.bLayout.incomingEdges[slotDirectionB.dA].push(this)
   }
 
   toSVGPath() {
-    return this.points.map(p => `L ${p.x} ${p.y}`).join(" ").replace(/^L/, "M")
+    let a = Vec.add(this.edge.a.center, this.assignedShiftA)
+    let b = Vec.add(this.edge.b.center, this.assignedShiftB)
+    let [angleA, angleB] = this.angles
+
+    let bend = Vec.norm(Vec.sub(b, a))
+    let p_1 = Vec.add(a, Vec.mul(Vec.unit(angleA), bend))
+    let p_2 = Vec.sub(b, Vec.mul(Vec.unit(angleB), bend))
+    return `M ${a.x} ${a.y} C ${p_1.x} ${p_1.y} ${p_2.x} ${p_2.y} ${b.x} ${b.y}`
+    return `M ${a.x} ${a.y} C ${p_1.x} ${p_1.y} ${p_2.x} ${p_2.y} ${b.x} ${b.y}`
   }
 }
 
@@ -196,10 +169,12 @@ class LayoutComputation {
           // Vec.unit(u)))
           return a
         }
-        candidates.sort((a, b) => value(a.edge.b.center) - value(b.edge.b.center))
-        if (angle >= 4) {
-          candidates.reverse()
-        }
+        // candidates.sort((a, b) => value(a.edge.b.center) -
+        // value(b.edge.b.center))
+        candidates.sort((a, b) => a.edge.color.localeCompare(b.edge.color))
+        // if (angle >= 4) {
+        //   candidates.reverse()
+        // }
         for (let j = 0; j < candidates.length; ++j) {
           let edgeLayout = candidates[j]
           let shiftValue = 8 * (j - (n - 1) / 2)
@@ -217,7 +192,10 @@ class LayoutComputation {
 
   private createEdgePaths() {
     for (let edgeLayout of this.edgeLayouts.values()) {
-      edgeLayout.points = pointsFromAlignmentAngles(Vec.add(edgeLayout.edge.a.center, edgeLayout.assignedShiftA), Vec.add(edgeLayout.edge.b.center, edgeLayout.assignedShiftB), edgeLayout.angles)
+      // edgeLayout.points = pointsFromAlignmentAngles(
+      //   Vec.add(edgeLayout.edge.a.center, edgeLayout.assignedShiftA),
+      //   Vec.add(edgeLayout.edge.b.center, edgeLayout.assignedShiftB),
+      //   ...edgeLayout.angles)
     }
   }
 

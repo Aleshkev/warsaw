@@ -1,5 +1,6 @@
-import {Edge, Station} from "./graph"
+
 import {App} from "./index"
+import {Edge, Station} from "./model"
 
 type UserSelectable = Station | Edge
 

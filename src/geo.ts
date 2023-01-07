@@ -40,43 +40,17 @@ export function getApproachAngles(a: xy, b: xy, alignment: DiagramAlignment): An
 
 }
 
-export function diagramAlignmentAngles(a: xy, b: xy, alignment: DiagramAlignment): Angle[] {
+export function diagramAlignmentAngles(a: xy, b: xy, alignment: DiagramAlignment): [Angle, Angle] {
   let delta = Vec.sub(b, a)
-
-  let diagonalAmount = Vec.fold(Math.min, Vec.map(Math.abs, delta))
-  let diagonalVector = Vec.map(Math.sign, delta)
-  let diagonalPath = Vec.mul(diagonalVector, diagonalAmount)
-  let diagonalAngle = Vec.angle(diagonalVector)
-
-  let straightPath = Vec.sub(b, Vec.add(a, diagonalPath))
-  let straightAngle = Vec.angle(straightPath)
-
-  if (diagonalAmount == 0) {
-    return [straightAngle]
-  }
-
-  // console.log(diagonalPath, straightPath)
-  // console.log(diagonalAngle, straightAngle)
-  let [firstAngle, secondAngle] = [diagonalAngle, straightAngle]
-
-  if (Vec.cross(diagonalPath, straightPath) > 0) {
-    [firstAngle, secondAngle] = [secondAngle, firstAngle]
-  }
-  if (alignment == "bendRight") {
-    [firstAngle, secondAngle] = [secondAngle, firstAngle]
-  }
-  return [firstAngle, secondAngle]
+  let angle = {a: Math.round(Vec.angle(delta).a / (Math.PI / 4)) * Math.PI / 4}
+  return [angle, angle]
 }
 
-export function pointsFromAlignmentAngles(a: xy, b: xy, angles: Angle[]) {
-  if(angles.length === 1) {
+export function pointsFromAlignmentAngles(a: xy, b: xy, angleA: Angle, angleB: Angle) {
+  if(angleA === angleB) {
     return [a, b]
   }
-  let [first, second] = angles
-
-  // console.log(first, second)
-  let p = intersectionOfLines([a, Vec.add(a, Vec.unit(first))], [b, Vec.add(b, Vec.unit(second))])
-  return [a, p, b]
+  return [a, b]
 }
 export function alignAngle(alpha: Angle): DiscreteAngle {
   return {dA: (8 + Math.round(alpha.a / (Math.PI / 4))) % 8}

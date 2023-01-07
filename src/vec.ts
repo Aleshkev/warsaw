@@ -118,6 +118,10 @@ export namespace Vec {
     let b = B * Math.sqrt(2)
     return [a, b]
   }
+
+  export function toString(p: xy) {
+    return `${p.x}, ${p.y}`
+  }
 }
 
 
