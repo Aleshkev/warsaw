@@ -1,6 +1,7 @@
 import {DiagramAlignment, xy} from "./geo"
 
 export class StationModel {
+  uuid = crypto.randomUUID()
   position: xy
   readonly name: string
 
@@ -13,10 +14,12 @@ export class StationModel {
 type EdgeAlignment = "left" | "right"
 
 export class EdgeModel {
+  uuid = crypto.randomUUID()
   alignment: EdgeAlignment
 }
 
 export class RouteGroupModel {
+  uuid = crypto.randomUUID()
   readonly color: string = "magenta"
 
   constructor(color: string) {
@@ -26,6 +29,7 @@ export class RouteGroupModel {
 }
 
 export class RouteModel {
+  uuid = crypto.randomUUID()
   group: RouteGroupModel
 
   // There are always n stations and n - 1 edges.
@@ -48,25 +52,27 @@ export class RouteModel {
     return this._stations
   }
 
-  get edges(): Model.EdgeModel[] {
+  get edges(): EdgeModel[] {
     return this._edges
   }
 }
 
 
 export class RouteDiagramModel {
-  private _stations: Set<StationModel> = new Set<StationModel>()
   private _routes: RouteModel[] = []
 
   addRoute(route: RouteModel) {
     this._routes.push(route)
-    for (let station of route.stations) {
-      this._stations.add(station)
-    }
   }
 
   get stations(): ReadonlySet<StationModel> {
-    return this._stations
+    let result: Set<StationModel> = new Set<StationModel>()
+    for (let route of this.routes) {
+      for (let station of route.stations) {
+        result.add(station)
+      }
+    }
+    return result
   }
 
   get routes(): readonly RouteModel[] {

@@ -1,6 +1,10 @@
 import * as d3 from "d3"
 import {D3ZoomEvent, sum} from "d3"
-import {computeLayout} from "./layout"
+import {
+  RouteDiagramLayout,
+  RouteLayout,
+  StationLayout,
+} from "./layout"
 import * as geo from "./geo"
 
 import * as vec from "./vec"
@@ -8,12 +12,12 @@ import {dragEdgeBehavior, dragStationBehavior} from "./drag"
 import {UserSelection} from "./selection"
 import {Vec} from "./vec"
 import {loadCity} from "./loadCity"
-import {Model} from "./model"
+import {RouteDiagramModel} from "./model"
 
 export class App {
   svg: d3.Selection<SVGElement, any, any, any>
 
-  routeMap: Model.RouteDiagramModel = new Model.RouteDiagramModel()
+  routeDiagram: RouteDiagramModel = new RouteDiagramModel()
 
   userSelection: UserSelection = new UserSelection(this)
 
@@ -45,8 +49,8 @@ export class App {
     // i), y: 120 + 80 * Math.cos(2 * Math.PI / n * i), })
     // this.stations.push(y) this.edges.push(new Edge(x, y))  }
 
-    loadCity(this.routeMap)
-    console.log(this.routeMap)
+    loadCity(this.routeDiagram)
+    console.log(this.routeDiagram)
 
     this.draw()
     this.addResizeBehavior()
@@ -56,11 +60,14 @@ export class App {
   draw() {
     console.log("Updating elements.")
 
-    let [stationLayouts, edgeLayouts] = computeLayout(this.stations, this.edges)
+    // let [stationLayouts, edgeLayouts] = computeLayout(this.stations,
+    // this.edges)
+
+    let layout = new RouteDiagramLayout(this.routeDiagram)
 
     d3.select("#edges")
       .selectAll("*")
-      .data(this.edges)
+      .data(layout.routes.values(), (layout: RouteLayout) => layout.model.uuid)
       .join(enter => enter.append("path")
         .attr("fill", "none")
         .call(dragEdgeBehavior(this)),
@@ -68,8 +75,8 @@ export class App {
       .transition()
       .duration(200)
       .ease(d3.easeCubicOut)
-      .attr("d", edge => edgeLayouts.get(edge).toSVGPath())
-      .attr("style", e => "stroke:" + e.color)
+      .attr("d", layout => layout.toSVGPath())
+      .attr("style", layout => "stroke:" + layout.model.group.color)
 
     d3.select("svg")
       .on("click", (event: MouseEvent) => {
@@ -78,10 +85,11 @@ export class App {
         this.userSelection.clear()
       })
 
+    console.log(this.userSelection)
     let app = this
     d3.select("#stations")
       .selectAll("*")
-      .data(this.routeMap.stations, (station: Station) => "" + station.center.x + " " + station.center.y)
+      .data(layout.stations.values(), (layout: StationLayout) => layout.model.uuid)
       .join(enter =>
         enter.append("path")
           .on("click", (event: MouseEvent, station) => {
@@ -92,21 +100,20 @@ export class App {
           }).call(dragStationBehavior(this)),
       )
       .classed("selected", station => this.userSelection.has(station))
-      .attr("transform", station => stationLayouts.get(station).getSVGTransform())
+      // .attr("transform", station => stationLayouts.get(station).getSVGTransform())
       // .transition()
       // .duration(200)
       // .ease(d3.easeQuadOut)
-      .attr("d", station => stationLayouts.get(station).toSVGPath())
-      .attr("title", station => station.name)
+      .attr("d", layout => layout.toSVGPath())
 
-    d3.select("#stations2")
-      .selectAll("*")
-      .data(this.routeMap.stations, (station: Station) => "" + station.center.x + " " + station.center.y)
-      .join("text")
-      .text(station => station.name)
-      .attr("x", station => station.center.x)
-      .attr("y", station => station.center.y)
-      .attr("text-anchor", "middle")
+    // d3.select("#stations2")
+    //   .selectAll("*")
+    //   .data(this.routeDiagram.stations, (station: Station) => "" + station.center.x + " " + station.center.y)
+    //   .join("text")
+    //   .text(station => station.name)
+    //   .attr("x", station => station.center.x)
+    //   .attr("y", station => station.center.y)
+    //   .attr("text-anchor", "middle")
   }
 
   addZoomBehavior() {

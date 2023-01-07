@@ -1,8 +1,14 @@
-import {computeLayout} from "./layout"
+
 import {FeatureCollection, GeoJSON, GeoJsonObject} from "geojson"
 import * as d3 from "d3"
 import {Vec} from "./vec"
-import {Model} from "./model"
+import {
+  EdgeModel,
+  RouteDiagramModel,
+  RouteGroupModel,
+  RouteModel,
+  StationModel,
+} from "./model"
 
 function roundPosition(x: number, y: number, r: number = 8): [number, number] {
   return [Math.round(x / r) * r, Math.round(y / r) * r]
@@ -16,7 +22,7 @@ function getRawProjection(center: [number, number] = [21.006188, 52.231813], sca
   let cosAlpha = Math.cos(alpha)
   let sinAlpha = Math.sin(alpha)
   return (x: number, y: number): [number, number] => {
-    let [X, Y] = baseProjection([x, y])
+    let [X, Y] = baseProjection([x, y])!
     return roundPosition(X * cosAlpha - Y * sinAlpha, Y * cosAlpha + X * sinAlpha)
   }
 }
@@ -31,7 +37,7 @@ function getProjection(rawProjection: (x: number, y: number) => [number, number]
 
 function extractStationName(osmName: string) {
   if (osmName == "") return "?"
-  let match = osmName.match(/^(.*?)[ 0-9]*$/)[1]
+  let match = osmName.match(/^(.*?)[ 0-9]*$/)![1]
   return match.replace("Warszawa", "Wawa")
 }
 
@@ -57,7 +63,7 @@ function randomColor() {
 }
 
 
-export function loadCity(map: Model.RouteDiagramModel) {
+export function loadCity(map: RouteDiagramModel) {
   type RelationMember = { ref: number, role: string }
   type Relation = { id: string, members: RelationMember[] }
   type RelationsJSON = { elements: Relation[] }
@@ -89,7 +95,7 @@ export function loadCity(map: Model.RouteDiagramModel) {
     let properties = feature.properties as RouteFeatureProperties
     let idString = properties["@id"]
     if (!properties.name || !idString || !feature.geometry) continue
-    let id = +idString.match(/[0-9]+/)[0]
+    let id = +idString.match(/[0-9]+/)?.[0]!
     if (!id) continue
     if (routeIdToStationIds.has(id)) {  // A relation.
       routeIdToRouteName.set(id, extractRouteName(properties.name))
@@ -113,20 +119,20 @@ export function loadCity(map: Model.RouteDiagramModel) {
 
   let transform = getRawProjection()
 
-  let stationNameToObject = new Map<string, Model.StationModel>()
+  let stationNameToObject = new Map<string, StationModel>()
 
   for (let [name, positions] of stationNameToPositions.entries()) {
     if (positions.length < 1) continue
     let [sumX, sumY] = positions.reduce(([x_1, y_1], [x_2, y_2]) => [x_1 + x_2, y_1 + y_2])
     let averageX = sumX / positions.length, averageY = sumY / positions.length
     let position = Vec.pair(...transform(averageX, averageY))
-    stationNameToObject.set(name, new Model.StationModel(position, name))
+    stationNameToObject.set(name, new StationModel(position, name))
   }
 
   let usedRoutes: string[] = []
-  let uniqueRoutes: Model.StationModel[][] = []
+  let uniqueRoutes: StationModel[][] = []
   for (let [routeId, stationsInRoute] of routeIdToStationIds) {
-    let route: Model.StationModel[] = []
+    let route: StationModel[] = []
     for (let stationId of stationsInRoute) {
       let stationName = stationIdToName.get(stationId)
       if (!stationName) continue
@@ -136,19 +142,19 @@ export function loadCity(map: Model.RouteDiagramModel) {
     }
 
     console.log(routeIdToRouteName.get(routeId))
-    let isUnique = usedRoutes.indexOf(routeIdToRouteName.get(routeId) as string) === -1
+    let isUnique = usedRoutes.indexOf(routeIdToRouteName.get(routeId)!) === -1
 
     if (isUnique) {
       uniqueRoutes.push(route)
-      usedRoutes.push(routeIdToRouteName.get(routeId) as string)
+      usedRoutes.push(routeIdToRouteName.get(routeId)!)
     }
   }
   console.log(uniqueRoutes)
 
   for (let stationsInRoute of uniqueRoutes) {
     let color = randomColor()
-    let group = new Model.RouteGroupModel(color)
-    let route = new Model.RouteModel(group)
+    let group = new RouteGroupModel(color)
+    let route = new RouteModel(group)
     map.addRoute(route)
     console.log(stationsInRoute)
     let last = stationsInRoute[0]
@@ -156,7 +162,7 @@ export function loadCity(map: Model.RouteDiagramModel) {
     for (let i = 1; i < stationsInRoute.length; ++i) {
       if (stationsInRoute[i] == last) continue
       let a = last, b = stationsInRoute[i]
-      route.pushStation(b, new Model.EdgeModel())
+      route.pushStation(b, new EdgeModel())
       last = b
     }
   }

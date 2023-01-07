@@ -1,13 +1,14 @@
 
 import {App} from "./index"
-import {Edge, Station} from "./model"
+import {EdgeLayout, StationLayout} from "./layout"
 
-type UserSelectable = Station | Edge
+type UserSelectableModel = {uuid: string}
+type UserSelectable = StationLayout | EdgeLayout
 
 export class UserSelection {
 
   private app: App
-  private selected: Set<UserSelectable> = new Set()
+  private selected: Set<UserSelectableModel> = new Set()
 
   constructor(app: App) {
     this.app = app
@@ -20,20 +21,20 @@ export class UserSelection {
     this.app.draw()
   }
   add(x: UserSelectable) {
-    if (this.selected.has(x)) return
+    if (this.selected.has(x.model)) return
 
-    this.selected.add(x)
+    this.selected.add(x.model)
     this.app.draw()
+    console.log("selecting", x)
   }
 
   has(x: UserSelectable) {
-    return this.selected.has(x)
+    return this.selected.has(x.model)
   }
 
   setTo(x: UserSelectable) {
     this.selected.clear();
-    this.selected.add(x);
-    this.app.draw()
+    this.add(x)
   }
 
 
