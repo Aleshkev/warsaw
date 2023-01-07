@@ -6,6 +6,7 @@
     "declaration": false,
     "noImplicitAny": false,
     "strictNullChecks": true,
+    "strictUndefinedChecks": true,
     "sourceMap": true,
     "jsx": "react",
     "noLib": false,

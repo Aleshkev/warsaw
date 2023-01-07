@@ -13,7 +13,7 @@ import {Model} from "./model"
 export class App {
   svg: d3.Selection<SVGElement, any, any, any>
 
-  routeMap: Model.Diagram = new Model.Diagram()
+  routeMap: Model.RouteDiagramModel = new Model.RouteDiagramModel()
 
   userSelection: UserSelection = new UserSelection(this)
 

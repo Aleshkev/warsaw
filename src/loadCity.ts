@@ -57,7 +57,7 @@ function randomColor() {
 }
 
 
-export function loadCity(map: Model.Diagram) {
+export function loadCity(map: Model.RouteDiagramModel) {
   type RelationMember = { ref: number, role: string }
   type Relation = { id: string, members: RelationMember[] }
   type RelationsJSON = { elements: Relation[] }
@@ -113,20 +113,20 @@ export function loadCity(map: Model.Diagram) {
 
   let transform = getRawProjection()
 
-  let stationNameToObject = new Map<string, Model.Station>()
+  let stationNameToObject = new Map<string, Model.StationModel>()
 
   for (let [name, positions] of stationNameToPositions.entries()) {
     if (positions.length < 1) continue
     let [sumX, sumY] = positions.reduce(([x_1, y_1], [x_2, y_2]) => [x_1 + x_2, y_1 + y_2])
     let averageX = sumX / positions.length, averageY = sumY / positions.length
     let position = Vec.pair(...transform(averageX, averageY))
-    stationNameToObject.set(name, new Model.Station(position, name))
+    stationNameToObject.set(name, new Model.StationModel(position, name))
   }
 
   let usedRoutes: string[] = []
-  let uniqueRoutes: Model.Station[][] = []
+  let uniqueRoutes: Model.StationModel[][] = []
   for (let [routeId, stationsInRoute] of routeIdToStationIds) {
-    let route: Model.Station[] = []
+    let route: Model.StationModel[] = []
     for (let stationId of stationsInRoute) {
       let stationName = stationIdToName.get(stationId)
       if (!stationName) continue
@@ -147,8 +147,8 @@ export function loadCity(map: Model.Diagram) {
 
   for (let stationsInRoute of uniqueRoutes) {
     let color = randomColor()
-    let group = new Model.Group(color)
-    let route = new Model.Route(group)
+    let group = new Model.RouteGroupModel(color)
+    let route = new Model.RouteModel(group)
     map.addRoute(route)
     console.log(stationsInRoute)
     let last = stationsInRoute[0]
@@ -156,7 +156,7 @@ export function loadCity(map: Model.Diagram) {
     for (let i = 1; i < stationsInRoute.length; ++i) {
       if (stationsInRoute[i] == last) continue
       let a = last, b = stationsInRoute[i]
-      route.pushStation(b, new Model.Edge())
+      route.pushStation(b, new Model.EdgeModel())
       last = b
     }
   }
