@@ -1,6 +1,12 @@
 import {Angle, xy} from "./geo"
 import {Vec} from "./vec"
-import {EdgeModel, RouteDiagramModel, RouteModel, StationModel} from "./model"
+import {
+  EdgeModel,
+  RouteDiagramModel,
+  RouteGroupModel,
+  RouteModel,
+  StationModel,
+} from "./model"
 import * as d3 from "d3"
 import {roundedRectangle} from "./shapes"
 import {getOrPut} from "./util"
@@ -12,7 +18,7 @@ export class StationLayout {
 
   simpleStationAngle: Angle | null = null
 
-  // nSlots: number[]
+  waitingForSlot: Map<number, EdgeLayout[]> = new Map<number, EdgeLayout[]>()
 
   // size: xy
   // rotation: Angle = {a: 0}
@@ -46,29 +52,30 @@ export class StationLayout {
     // halfSize), Vec.add(this.station.center, halfSize), 14)
     let d = roundedRectangle(Vec.sub(this.model.position, halfSize), Vec.add(this.model.position, halfSize), halfSize.x)
 
-    // for(let angle of this.outgoingEdges.keys()) {
-    //   d += `M ${Vec.toString(this.model.position)}
-    // ${Vec.toString(Vec.add(this.model.position,
-    // Vec.mul(Vec.unit(Angles.round(angle)), 10)))} ` }
 
     return d
   }
 
   toSVGPath() {
-    if (this.simpleStationAngle == null) {
-      return this.transferStationPath()
-    }
-    return this.simpleStationPath()
+    let d = (this.simpleStationAngle === null ? this.transferStationPath() : this.simpleStationPath())
+    // for (let angle of this.waitingForSlot.keys()) {
+    //   d += `M ${Vec.toString(this.model.position)}
+    // ${Vec.toString(Vec.add(this.model.position,
+    //     Vec.mul(Vec.unit(Angles.round(Angles.of(angle))), 10)))} `
+    // }
+    return d
   }
 }
 
 
 export class EdgeLayout {
   model: EdgeModel
+  route: RouteLayout
   stations: [StationLayout, StationLayout]
 
-  constructor(edge: EdgeModel, stations: readonly [StationLayout, StationLayout]) {
+  constructor(edge: EdgeModel, route: RouteLayout, stations: readonly [StationLayout, StationLayout]) {
     this.model = edge
+    this.route = route
     this.stations = [...stations]
   }
 
@@ -85,22 +92,37 @@ export class RouteLayout {
     this.model = route
     this.stations = [...stations]
     for (let i = 0; i + 1 < stations.length; ++i) {
-      this.edges.push(new EdgeLayout(this.model.edges[i], [this.stations[i], this.stations[i + 1]]))
+      this.edges.push(new EdgeLayout(this.model.edges[i], this,[this.stations[i], this.stations[i + 1]]))
     }
   }
 
+  static customizePath(selection: d3.Selection<any, RouteLayout, any, any>) {
+    selection.style("stroke", route => route.model.getColor())
+  }
+
   toSVGPath() {
-    let points: xy[] = []
-    for (let station of this.stations) {
-      points.push(station.model.position)
+    if (this.edges.length === 0) {
+      return ""
     }
 
-    let generator = d3.line().curve(d3.curveNatural)
-    let mainLine = generator(points.map(point => [point.x, point.y]))
-    let path = mainLine
-    for (let station of this.stations) {
+    let points: xy[] = []
+    // for (let station of this.stations) {
+    //   points.push(station.model.position)
+    // }
+
+    points.push(Vec.add(this.edges[0].stations[0].model.position, this.edges[0].assignedShifts[0]))
+    for (let edge of this.edges) {
+      // points.push(Vec.add(edge.stations[0].model.position, edge.assignedShifts[0]))
+      points.push(Vec.add(edge.stations[1].model.position, edge.assignedShifts[1]))
+    }
+
+    let generator = d3.line().curve(d3.curveCatmullRom)
+    let path = generator(points.map(point => [point.x, point.y]))
+    for (let i = 0; i < this.stations.length; ++i) {
+      let station = this.stations[i]
+      let point = points[i]
       if (station.simpleStationAngle === null) continue
-      path += `M ${Vec.toString(station.model.position)} L ${Vec.toString(Vec.add(station.model.position, Vec.mul(Vec.unit(station.simpleStationAngle), 20)))}`
+      path += `M ${Vec.toString(point)} L ${Vec.toString(Vec.add(point, Vec.mul(Vec.unit(station.simpleStationAngle), 20)))}`
     }
     return path
   }
@@ -116,7 +138,6 @@ export class RouteDiagramLayout {
     for (let station of routeDiagram.stations.values()) {
       this.stations.set(station, new StationLayout(station))
     }
-    console.log(routeDiagram, routeDiagram.stations, this.stations)
     for (let route of routeDiagram.routes.values()) {
       let stationLayouts = route.stations.map(station => this.stations.get(station)!)
       this.routes.set(route, new RouteLayout(route, stationLayouts))
@@ -124,12 +145,8 @@ export class RouteDiagramLayout {
 
     this.saveOutgoingEdges()
     this.findSimpleStations()
-    // this.decideAmountsOfSlots()
-    // this.decideShapesOfStations()
-    // this.assignSlots()
-    // this.createEdgePaths()
-
-    console.log(this)
+    this.assignAngles()
+    this.assignShifts()
   }
 
   saveOutgoingEdges() {
@@ -162,6 +179,46 @@ export class RouteDiagramLayout {
       let [a, b] = angles
       let alpha = Angles.average(a, b)
       station.simpleStationAngle = Angles.add(alpha, Angles.of(Math.PI))
+    }
+  }
+
+  assignAngles() {
+    for (let route of this.routes.values()) {
+      for (let edge of route.edges) {
+        for (let i = 0; i < 2; ++i) {
+          edge.assignedAngles[i] = Angles.halfCircle(Angles.round(Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)))
+          getOrPut(edge.stations[i].waitingForSlot, edge.assignedAngles[i].a, []).push(edge)
+        }
+      }
+    }
+  }
+
+  assignShifts() {
+    for (let station of this.stations.values()) {
+      if(station.model.name.match(/.*eszera.*/)) {
+      console.log(station.waitingForSlot)
+
+      }
+      for (let [angle, waiting] of station.waitingForSlot.entries()) {
+        let waitingByGroup = new Map<RouteGroupModel, EdgeLayout[]>()
+        for(let edge of waiting) {
+          getOrPut(waitingByGroup, edge.route.model.group, []).push(edge)
+        }
+
+        let groups = [...waitingByGroup.keys()]
+        groups.sort()
+        let n = groups.length
+        for (let i = 0; i < n; ++i) {
+          let group = groups[i]
+          let baseShift = Vec.mul(Vec.unit(Angles.of(angle + Math.PI / 2)), 10)
+          let shift = Vec.mul(baseShift, i - (n - 1) / 2)
+          for(let edge of waitingByGroup.get(group)!) {
+            edge.assignedShifts[edge.stations[0] === station ? 0 : 1] = shift
+          }
+          // let shiftI = (edge.stations[0] === station ? 0 : 1)
+          // edge.assignedShifts[shiftI] = shift
+        }
+      }
     }
   }
 }

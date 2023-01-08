@@ -65,7 +65,7 @@ export class App {
       // .duration(200)
       // .ease(d3.easeCubicOut)
       .attr("d", layout => layout.toSVGPath())
-      .attr("style", layout => "stroke:" + layout.model.group.color)
+      .call(RouteLayout.customizePath)
 
     d3.select("svg")
       .on("click", (event: MouseEvent) => {

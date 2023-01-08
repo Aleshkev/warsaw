@@ -33,14 +33,20 @@ export class RouteModel {
   uuid = randomId()
   group: RouteGroupModel
   name: string
+  color: string | null = null
 
   // There are always n stations and n - 1 edges.
   private _stations: StationModel[] = []
   private _edges: EdgeModel[] = []
 
-  constructor(group: RouteGroupModel, name: string) {
+  constructor(group: RouteGroupModel, name: string, color: string | null = null) {
     this.group = group
     this.name = name
+    this.color = color
+  }
+
+  getColor() {
+    return this.color ?? this.group.color
   }
 
   pushStation(station: StationModel, edge: EdgeModel | null) {

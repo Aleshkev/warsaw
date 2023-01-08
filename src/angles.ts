@@ -22,4 +22,14 @@ export namespace Angles {
   export function average(alpha: Angle, beta: Angle): Angle {
     return Vec.toAngle(Vec.add(Vec.unit(alpha), Vec.unit(beta)))
   }
+
+  export function halfCircle(alpha: Angle): Angle {
+    let x = alpha.a % Math.PI
+    if(Math.abs(x) <= Math.PI / 2 && !Angles.equals({a: x}, {a: Math.PI / 2})) return {a: x}
+    if(x > 0) return {a: x - Math.PI}
+    return {a: x + Math.PI}
+    // let y = (x + Math.PI) % Math.PI
+    // let z = (x - Math.PI) % Math.PI
+    // return Angles.of(Math.abs(x) < Math.abs(y) ? x : y)
+  }
 }

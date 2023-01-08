@@ -147,10 +147,14 @@ export function loadCity(map: RouteDiagramModel) {
   }
   console.log(uniqueRoutes)
 
-  for (let stationsInRoute of uniqueRoutes) {
-    let color = randomColor()
+    // let color = randomColor()
+  let color = "black"
     let group = new RouteGroupModel(color)
-    let route = new RouteModel(group, "route")
+  for (let stationsInRoute of uniqueRoutes) {
+    if(Math.random() < .5) {
+      group = new RouteGroupModel(randomColor())
+    }
+    let route = new RouteModel(group, "route", randomColor())
     map.addRoute(route)
     console.log(stationsInRoute)
     let last = stationsInRoute[0]
