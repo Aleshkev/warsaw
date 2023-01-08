@@ -18,7 +18,7 @@ type DiscreteAngle = { dA: number }
 
 export function diagramAlignmentAngles(a: xy, b: xy): [Angle, Angle] {
   let delta = Vec.sub(b, a)
-  let angle = {a: Math.round(Vec.angle(delta).a / (Math.PI / 4)) * Math.PI / 4}
+  let angle = {a: Math.round(Vec.toAngle(delta).a / (Math.PI / 4)) * Math.PI / 4}
   return [angle, angle]
 }
 

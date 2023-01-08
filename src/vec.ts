@@ -13,8 +13,12 @@ export namespace Vec {
     return {x: Math.cos(alpha.a), y: Math.sin(alpha.a)}
   }
 
-  export function angle(v: xy): Angle {
+  export function toAngle(v: xy): Angle {
     return {a: Math.atan2(v.y, v.x)}
+  }
+
+  export function toAngle2(a: xy, b: xy): Angle {
+    return toAngle(Vec.sub(b, a))
   }
 
   export function add(a: xy, b: xy): xy {
@@ -122,6 +126,10 @@ export namespace Vec {
   export function toString(p: xy) {
     return `${p.x}, ${p.y}`
   }
+
+
+
+  // export function truncateAngle(alpha: Angle): Angle {
+  //   if(Math.abs(alpha))
+  // }
 }
-
-

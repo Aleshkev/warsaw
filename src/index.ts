@@ -70,9 +70,9 @@ export class App {
         .attr("fill", "none")
         .call(dragEdgeBehavior(this)),
       )
-      .transition()
-      .duration(200)
-      .ease(d3.easeCubicOut)
+      // .transition()
+      // .duration(200)
+      // .ease(d3.easeCubicOut)
       .attr("d", layout => layout.toSVGPath())
       .attr("style", layout => "stroke:" + layout.model.group.color)
 

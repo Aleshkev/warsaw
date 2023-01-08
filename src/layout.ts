@@ -2,10 +2,13 @@ import {Angle, xy} from "./geo"
 import {Vec} from "./vec"
 import {EdgeModel, RouteDiagramModel, RouteModel, StationModel} from "./model"
 import * as d3 from "d3"
+import {roundedRectangle} from "./shapes"
+import {getOrPut} from "./util"
+import {Angles} from "./angles"
 
 export class StationLayout {
   model: StationModel
-  incomingEdges: Map<Angle, EdgeLayout[]> = new Map<Angle, EdgeLayout[]>()
+  outgoingEdges: Map<Angle, EdgeLayout[]> = new Map<Angle, EdgeLayout[]>()
   // nSlots: number[]
 
   // size: xy
@@ -13,22 +16,6 @@ export class StationLayout {
 
   constructor(station: StationModel) {
     this.model = station
-  }
-
-  private roundedRectanglePath(a: xy, b: xy, r: number = 6) {
-    let c = Vec.pair(b.x, a.y), d = Vec.pair(a.x, b.y)
-
-    return `M ${a.x + r} ${a.y}
-      L ${c.x - r} ${c.y} a ${r} ${r} 0 0 1 ${r} ${r} 
-      L ${b.x} ${b.y - r} a ${r} ${r} 0 0 1 ${-r} ${r}
-      L ${d.x + r} ${d.y} a ${r} ${r} 0 0 1 ${-r} ${-r}
-      L ${a.x} ${a.y + r} a ${r} ${r} 0 0 1 ${r} ${-r}`
-  }
-
-  private circlePath(a: xy, b: xy) {
-    let r = Vec.fold(Math.max, Vec.sub(b, a)) / 2
-    let c = Vec.mul(Vec.add(a, b), .5)
-    return `M ${c.x} ${c.y - r} a ${r} ${r} 0 0 1 0 ${2 * r} a ${r} ${r} 0 0 1 0 ${-2 * r}`
   }
 
   toSVGPath() {
@@ -39,11 +26,13 @@ export class StationLayout {
     let halfSize = Vec.pair(14, 14)
     // return this.roundedRectanglePath(Vec.sub(this.station.center,
     // halfSize), Vec.add(this.station.center, halfSize), 14)
-    return this.roundedRectanglePath(Vec.sub(this.model.position, halfSize), Vec.add(this.model.position, halfSize), 6)
-  }
+    let d = roundedRectangle(Vec.sub(this.model.position, halfSize), Vec.add(this.model.position, halfSize), halfSize.x)
 
-  getSVGTransform() {
-    return ""
+    // for(let angle of this.outgoingEdges.keys()) {
+    //   d += `M ${Vec.toString(this.model.position)} ${Vec.toString(Vec.add(this.model.position, Vec.mul(Vec.unit(Angles.round(angle)), 10)))} `
+    // }
+
+    return d
   }
 }
 
@@ -59,17 +48,6 @@ export class EdgeLayout {
 
   assignedAngles: [Angle, Angle] = [{a: 0}, {a: 0}]
   assignedShifts: [xy, xy] = [Vec.pair(0, 0), Vec.pair(0, 0)]
-
-  toSVGPath() {
-    let a = Vec.add(this.stations[0].model.position, this.assignedShifts[0])
-    let b = Vec.add(this.stations[1].model.position, this.assignedShifts[1])
-    let [angleA, angleB] = this.assignedAngles
-
-    let bend = Vec.norm(Vec.sub(b, a))
-    let p_1 = Vec.add(a, Vec.mul(Vec.unit(angleA), bend))
-    let p_2 = Vec.sub(b, Vec.mul(Vec.unit(angleB), bend))
-    return `M ${a.x} ${a.y} C ${p_1.x} ${p_1.y} ${p_2.x} ${p_2.y} ${b.x} ${b.y}`
-  }
 }
 
 export class RouteLayout {
@@ -112,12 +90,23 @@ export class RouteDiagramLayout {
       this.routes.set(route, new RouteLayout(route, stationLayouts))
     }
 
+    this.saveOutgoingEdges()
     // this.decideAmountsOfSlots()
     // this.decideShapesOfStations()
     // this.assignSlots()
     // this.createEdgePaths()
+
+    console.log(this)
   }
 
-
-
+  saveOutgoingEdges() {
+    for (let route of this.routes.values()) {
+      for (let edge of route.edges) {
+        for (let i = 0; i < 2; ++i) {
+          let angle = Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)
+          getOrPut(edge.stations[i].outgoingEdges, angle, []).push(edge)
+        }
+      }
+    }
+  }
 }
