@@ -1,12 +1,4 @@
-import {
-  alignAngle,
-  Angle,
-  diagramAlignmentAngles,
-  pointsFromAlignmentAngles,
-  radToDeg,
-  unalignAngle,
-  xy,
-} from "./geo"
+import {Angle, xy} from "./geo"
 import {Vec} from "./vec"
 import {EdgeModel, RouteDiagramModel, RouteModel, StationModel} from "./model"
 import * as d3 from "d3"
@@ -100,10 +92,7 @@ export class RouteLayout {
     }
 
     let generator = d3.line().curve(d3.curveNatural)
-    let p = generator(points.map(point => [point.x, point.y]))
-    return p
-
-    return points.map(point => `S ${Vec.toString(point)}`).join(" ").replace("S", "M")
+    return generator(points.map(point => [point.x, point.y]))
   }
 
   assignedShifts: xy[]

@@ -1,4 +1,4 @@
-import {DiagramAlignment, xy} from "./geo"
+import {xy} from "./geo"
 
 export class StationModel {
   uuid = crypto.randomUUID()

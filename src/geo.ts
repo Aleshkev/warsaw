@@ -5,8 +5,6 @@ export type Line = [xy, xy]  // Or segment.
 export type Polygon = xy[]
 export type Angle = { readonly a: number }
 
-import * as vec from "./vec"
-
 export function radToDeg(radians: number) {
   return 180 * radians / Math.PI
 }
@@ -15,32 +13,10 @@ export function lineFromPointAndAngle(point: xy, angle: Angle): Line {
   return [point, Vec.add(point, Vec.unit(angle))]
 }
 
-export type DiagramAlignment = "bendLeft" | "bendRight"
-
 type DiscreteAngle = { dA: number }
 
-export function getApproachAngles(a: xy, b: xy, alignment: DiagramAlignment): Angle[] {
-  let delta = Vec.sub(b, a)
-  let diagonalAmount = Vec.fold(Math.min, Vec.map(Math.abs, delta))
-  let diagonalVector = Vec.map(Math.sign, delta)
-  let diagonalPath = Vec.mul(diagonalVector, diagonalAmount)
-  let diagonalAngle = Vec.angle(diagonalVector)
 
-  let straightPath = Vec.sub(b, Vec.add(a, diagonalPath))
-  let straightAmount = Vec.norm(straightPath)
-  let straightAngle = Vec.angle(straightPath)
-
-  if(diagonalAmount == 0) {
-    return [straightAngle, straightAngle]
-  }
-  if(straightAmount == 0) {
-    return [diagonalAngle, diagonalAngle]
-  }
-
-
-}
-
-export function diagramAlignmentAngles(a: xy, b: xy, alignment: DiagramAlignment): [Angle, Angle] {
+export function diagramAlignmentAngles(a: xy, b: xy): [Angle, Angle] {
   let delta = Vec.sub(b, a)
   let angle = {a: Math.round(Vec.angle(delta).a / (Math.PI / 4)) * Math.PI / 4}
   return [angle, angle]

@@ -5,9 +5,7 @@ import {
   RouteLayout,
   StationLayout,
 } from "./layout"
-import * as geo from "./geo"
 
-import * as vec from "./vec"
 import {dragEdgeBehavior, dragStationBehavior} from "./drag"
 import {UserSelection} from "./selection"
 import {Vec} from "./vec"

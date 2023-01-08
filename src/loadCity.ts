@@ -161,7 +161,7 @@ export function loadCity(map: RouteDiagramModel) {
     route.pushStation(last, null)
     for (let i = 1; i < stationsInRoute.length; ++i) {
       if (stationsInRoute[i] == last) continue
-      let a = last, b = stationsInRoute[i]
+      let b = stationsInRoute[i]
       route.pushStation(b, new EdgeModel())
       last = b
     }
