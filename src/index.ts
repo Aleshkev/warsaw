@@ -58,9 +58,6 @@ export class App {
   draw() {
     console.log("Updating elements.")
 
-    // let [stationLayouts, edgeLayouts] = computeLayout(this.stations,
-    // this.edges)
-
     let layout = new RouteDiagramLayout(this.routeDiagram)
 
     d3.select("#edges")
@@ -83,7 +80,7 @@ export class App {
         this.userSelection.clear()
       })
 
-    console.log(this.userSelection)
+
     let app = this
     d3.select("#stations")
       .selectAll("*")
@@ -98,20 +95,22 @@ export class App {
           }).call(dragStationBehavior(this)),
       )
       .classed("selected", station => this.userSelection.has(station))
+      .call(StationLayout.customizePath)
       // .attr("transform", station => stationLayouts.get(station).getSVGTransform())
       // .transition()
       // .duration(200)
       // .ease(d3.easeQuadOut)
       .attr("d", layout => layout.toSVGPath())
 
-    // d3.select("#stations2")
-    //   .selectAll("*")
-    //   .data(this.routeDiagram.stations, (station: Station) => "" + station.center.x + " " + station.center.y)
-    //   .join("text")
-    //   .text(station => station.name)
-    //   .attr("x", station => station.center.x)
-    //   .attr("y", station => station.center.y)
-    //   .attr("text-anchor", "middle")
+    d3.select("#stations2")
+      .selectAll("*")
+      .data([...layout.stations.values()].filter(station => this.userSelection.has(station)), (station: StationLayout) => station.model.uuid)
+      .join("text")
+      // .classed("selected", station => this.userSelection.has(station))
+      .text(station => station.model.name)
+      .attr("x", station => station.model.position.x)
+      .attr("y", station => station.model.position.y)
+      .attr("text-anchor", "middle")
   }
 
   addZoomBehavior() {

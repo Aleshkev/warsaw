@@ -1,8 +1,7 @@
-
 import {App} from "./index"
 import {EdgeLayout, StationLayout} from "./layout"
 
-type UserSelectableModel = {uuid: string}
+type UserSelectableModel = { uuid: string }
 type UserSelectable = StationLayout | EdgeLayout
 
 export class UserSelection {
@@ -20,12 +19,25 @@ export class UserSelection {
     this.selected.clear()
     this.app.draw()
   }
+
   add(x: UserSelectable) {
-    if (this.selected.has(x.model)) return
+    if (this.has(x)) return
 
     this.selected.add(x.model)
     this.app.draw()
-    console.log("selecting", x)
+  }
+
+  delete(x: UserSelectable) {
+    if (!this.has(x)) return
+    this.selected.delete(x.model)
+  }
+
+  toggle(x: UserSelectable) {
+    if (this.has(x)) {
+      this.delete(x)
+    } else {
+      this.add(x)
+    }
   }
 
   has(x: UserSelectable) {
@@ -33,7 +45,7 @@ export class UserSelection {
   }
 
   setTo(x: UserSelectable) {
-    this.selected.clear();
+    this.selected.clear()
     this.add(x)
   }
 

@@ -5,7 +5,7 @@ export namespace Vec {
     return {x: x, y: y}
   }
 
-  export function equals(a: xy, b: xy, eps: number = 1e-8): boolean {
+  export function equals(a: xy, b: xy, eps: number = 1e-6): boolean {
     return Math.abs(a.x - b.x) < eps && Math.abs(a.y - b.y) < eps
   }
 

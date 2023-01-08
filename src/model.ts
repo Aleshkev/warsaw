@@ -32,13 +32,15 @@ export class RouteGroupModel {
 export class RouteModel {
   uuid = randomId()
   group: RouteGroupModel
+  name: string
 
   // There are always n stations and n - 1 edges.
   private _stations: StationModel[] = []
   private _edges: EdgeModel[] = []
 
-  constructor(group: RouteGroupModel) {
+  constructor(group: RouteGroupModel, name: string) {
     this.group = group
+    this.name = name
   }
 
   pushStation(station: StationModel, edge: EdgeModel | null) {

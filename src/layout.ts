@@ -9,6 +9,9 @@ import {Angles} from "./angles"
 export class StationLayout {
   model: StationModel
   outgoingEdges: Map<Angle, EdgeLayout[]> = new Map<Angle, EdgeLayout[]>()
+
+  simpleStationAngle: Angle | null = null
+
   // nSlots: number[]
 
   // size: xy
@@ -18,7 +21,22 @@ export class StationLayout {
     this.model = station
   }
 
-  toSVGPath() {
+  color: string = "#000"
+
+  static customizePath(selection: d3.Selection<any, StationLayout, any, any>) {
+    selection
+      .classed("simple", (station => station.simpleStationAngle !== null))
+      .style("stroke", (station => station.simpleStationAngle !== null ? "rgba(0,0,0,0.01)" : null))
+    // selection.filter(station => station.simpleStationAngle === null)
+    //   .raise()
+  }
+
+  simpleStationPath() {
+    let angle = this.simpleStationAngle ?? Angles.of(0)
+    return `M ${Vec.toString(this.model.position)} L ${Vec.toString(Vec.add(this.model.position, Vec.mul(Vec.unit(angle), 20)))}`
+  }
+
+  transferStationPath() {
     let padding = Vec.pair(6, 6)
     // return this.circlePath(Vec.sub(this.boundsMin[0], padding),
     // Vec.add(this.boundsMax[0], padding));
@@ -29,10 +47,18 @@ export class StationLayout {
     let d = roundedRectangle(Vec.sub(this.model.position, halfSize), Vec.add(this.model.position, halfSize), halfSize.x)
 
     // for(let angle of this.outgoingEdges.keys()) {
-    //   d += `M ${Vec.toString(this.model.position)} ${Vec.toString(Vec.add(this.model.position, Vec.mul(Vec.unit(Angles.round(angle)), 10)))} `
-    // }
+    //   d += `M ${Vec.toString(this.model.position)}
+    // ${Vec.toString(Vec.add(this.model.position,
+    // Vec.mul(Vec.unit(Angles.round(angle)), 10)))} ` }
 
     return d
+  }
+
+  toSVGPath() {
+    if (this.simpleStationAngle == null) {
+      return this.transferStationPath()
+    }
+    return this.simpleStationPath()
   }
 }
 
@@ -70,7 +96,13 @@ export class RouteLayout {
     }
 
     let generator = d3.line().curve(d3.curveNatural)
-    return generator(points.map(point => [point.x, point.y]))
+    let mainLine = generator(points.map(point => [point.x, point.y]))
+    let path = mainLine
+    for (let station of this.stations) {
+      if (station.simpleStationAngle === null) continue
+      path += `M ${Vec.toString(station.model.position)} L ${Vec.toString(Vec.add(station.model.position, Vec.mul(Vec.unit(station.simpleStationAngle), 20)))}`
+    }
+    return path
   }
 
   assignedShifts: xy[]
@@ -91,6 +123,7 @@ export class RouteDiagramLayout {
     }
 
     this.saveOutgoingEdges()
+    this.findSimpleStations()
     // this.decideAmountsOfSlots()
     // this.decideShapesOfStations()
     // this.assignSlots()
@@ -104,9 +137,31 @@ export class RouteDiagramLayout {
       for (let edge of route.edges) {
         for (let i = 0; i < 2; ++i) {
           let angle = Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)
+          for (let existingAngle of edge.stations[i].outgoingEdges.keys()) {
+            if (Angles.equals(angle, existingAngle)) {
+              angle = existingAngle
+              break
+            }
+          }
           getOrPut(edge.stations[i].outgoingEdges, angle, []).push(edge)
         }
       }
+    }
+  }
+
+  findSimpleStations() {
+    for (let station of this.stations.values()) {
+      for (let route of this.routes.values()) {
+        if (route.stations.indexOf(station) !== -1) {
+          station.color = route.model.group.color
+        }
+      }
+
+      let angles = [...station.outgoingEdges.keys()]
+      if (angles.length != 2) continue
+      let [a, b] = angles
+      let alpha = Angles.average(a, b)
+      station.simpleStationAngle = Angles.add(alpha, Angles.of(Math.PI))
     }
   }
 }

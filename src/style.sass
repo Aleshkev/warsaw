@@ -60,10 +60,16 @@ svg
   &.selected
     fill: #d3d3d3
 
+  &.simple
+    stroke-width: 10px
+
 #edges > *
   stroke: $red
   stroke-width: 10px
   stroke-linejoin: round
+
+#stations2 > *
+  pointer-events: none
 
 #city
   fill: none
@@ -76,12 +82,12 @@ svg
 text
   font-variant-caps: all-small-caps
   //text-transform: lowercase
-  letter-spacing: -.2ex
+  //letter-spacing: -.2ex
   stroke: white
-  stroke-width: 0.4em
-  fill: $blue
-  font-stretch: extra-condensed
+  stroke-width: 0.5em
+  fill: black
+  //font-stretch: extra-condensed
   paint-order: stroke
   stroke-linejoin: round
   alignment-baseline: middle
-  font-size: .5rem
+  //font-size: .5rem
