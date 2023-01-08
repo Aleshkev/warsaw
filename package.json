@@ -9,7 +9,8 @@
     "start:dev": "parcel ./src/index.html",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "parcel build ./src/index.html --public-url ./ --no-scope-hoist",
-    "push-gh-pages": "push-dir --dir=dist --branch=gh-pages --cleanup --verbose"
+    "push-gh-pages": "push-dir --dir=dist --branch=gh-pages --cleanup --verbose",
+    "deploy": "yarn run build && yarn run push-gh-pages"
   },
   "keywords": [],
   "author": "",
