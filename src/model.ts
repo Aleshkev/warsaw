@@ -1,7 +1,8 @@
 import {xy} from "./geo"
+import {randomId} from "./util"
 
 export class StationModel {
-  uuid = crypto.randomUUID()
+  uuid = randomId()
   position: xy
   readonly name: string
 
@@ -14,12 +15,12 @@ export class StationModel {
 type EdgeAlignment = "left" | "right"
 
 export class EdgeModel {
-  uuid = crypto.randomUUID()
+  uuid = randomId()
   alignment: EdgeAlignment
 }
 
 export class RouteGroupModel {
-  uuid = crypto.randomUUID()
+  uuid = randomId()
   readonly color: string = "magenta"
 
   constructor(color: string) {
@@ -29,7 +30,7 @@ export class RouteGroupModel {
 }
 
 export class RouteModel {
-  uuid = crypto.randomUUID()
+  uuid = randomId()
   group: RouteGroupModel
 
   // There are always n stations and n - 1 edges.

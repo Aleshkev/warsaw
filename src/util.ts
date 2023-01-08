@@ -1,3 +1,7 @@
+// import  from "uuid"
+
+import {v4} from "uuid"
+
 export function getOrDefault<K, V>(map: Map<K, V>, key: K, defaultValue: V) {
   return map.get(key) ?? defaultValue
 }
@@ -9,4 +13,8 @@ export function getOrPut<K, V>(map: Map<K, V>, key: K, defaultValue: V): V {
     return defaultValue
   }
   return value
+}
+
+export function randomId() {
+  return v4()
 }
