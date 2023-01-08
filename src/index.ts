@@ -10,7 +10,12 @@ import {dragEdgeBehavior, dragStationBehavior} from "./drag"
 import {UserSelection} from "./selection"
 import {Vec} from "./vec"
 import {loadCity} from "./loadCity"
-import {RouteDiagramModel} from "./model"
+import {
+  RouteDiagramModel,
+  RouteGroupModel,
+  RouteModel,
+  StationModel,
+} from "./model"
 
 export class App {
   svg: d3.Selection<SVGElement, any, any, any>
@@ -30,29 +35,18 @@ export class App {
         .attr("id", groupId)
     }
 
-    // this.stations.push(new Station({x: 0, y: 0}))
-    // this.stations.push(new Station({x: 173, y: 0}))
-    // this.stations.push(new Station({x: 285, y: 0}))
-    // this.stations.push(new Station({x: 28, y: 45}))
-    // this.stations.push(new Station({x: 81, y: 88}))
-
-    // for (let y = 120; y <= 400; y += 50) {
-    //   for (let x = 120; x <= 500; x += 50) {
-    //     this.stations.push(new Station(Vec.pair(x, y)))
-    //     if (x > 120)
-    //       this.edges.push(new Edge(this.stations[this.stations.length - 2],
-    // this.stations[this.stations.length - 1])) } }  let x = new Station({x:
-    // 600, y: 120}) this.stations.push(x) let n = 16 for (let i = 0; i < n;
-    // ++i) { let y = new Station({ x: 600 + 80 * Math.sin(2 * Math.PI / n *
-    // i), y: 120 + 80 * Math.cos(2 * Math.PI / n * i), })
-    // this.stations.push(y) this.edges.push(new Edge(x, y))  }
-
     loadCity(this.routeDiagram)
     console.log(this.routeDiagram)
+
+    // let r = new RouteModel(new RouteGroupModel("black"), "def")
+    // r.pushStation(new StationModel(Vec.pair(0, 0), "Pałac Kultury i Nauki"), null)
+    // this.routeDiagram.addRoute(r)
 
     this.draw()
     this.addResizeBehavior()
     this.addZoomBehavior()
+
+    d3.select("#loading-error").remove()
   }
 
   draw() {
@@ -116,13 +110,18 @@ export class App {
   addZoomBehavior() {
     let handleZoom = (event: D3ZoomEvent<any, any>) => {
       d3.select("#content")
+        // .transition()
+        // .duration(25)
+        // .ease(d3.easeQuadOut)
         .attr("transform", event.transform.toString())
     }
     let zoom = d3.zoom()
       .on("zoom", handleZoom)
       // .scaleExtent([.20, 5])
       .duration(100)
-    this.svg.call(zoom)
+    this.svg
+      .call(zoom)
+      .call(zoom.transform, d3.zoomIdentity.translate(window.innerWidth / 2, window.innerHeight / 2))
   }
 
   addResizeBehavior() {

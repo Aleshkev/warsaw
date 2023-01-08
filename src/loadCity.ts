@@ -18,13 +18,9 @@ function getRawProjection(center: [number, number] = [21.006188, 52.231813], sca
   let baseProjection = d3.geoMercator()
     .scale(scale)
     .center(center)
-  let alpha = Math.PI / 180 * 19
-  let cosAlpha = Math.cos(alpha)
-  let sinAlpha = Math.sin(alpha)
-  return (x: number, y: number): [number, number] => {
-    let [X, Y] = baseProjection([x, y])!
-    return roundPosition(X * cosAlpha - Y * sinAlpha, Y * cosAlpha + X * sinAlpha)
-  }
+    .translate([0, 0])  // The default isn't zero 🥹 so much debugging
+    .angle(-19)
+  return (x, y) => baseProjection([x, y])!
 }
 
 function getProjection(rawProjection: (x: number, y: number) => [number, number]) {
