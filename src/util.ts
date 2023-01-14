@@ -19,3 +19,6 @@ export function randomId() {
   return v4()
 }
 
+export function arraysEqual<T>(a: T[], b: T[]) {
+  return a.length == b.length && a.every((x, i) => a[i] == b[i])
+}

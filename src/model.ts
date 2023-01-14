@@ -19,6 +19,15 @@ export class EdgeModel {
   alignment: EdgeAlignment
 }
 
+type SimpleStationShape = "wedge" | "doubleWedge" | "dot" | "alwaysTransfer"
+
+type TransferStationShape = "smallDot" | "dot" | "alwaysSquare"
+
+export class RouteGroupStyle {
+  color: string
+
+}
+
 export class RouteGroupModel {
   uuid = randomId()
   readonly color: string = "magenta"
@@ -28,6 +37,7 @@ export class RouteGroupModel {
   }
 
 }
+
 
 export class RouteModel {
   uuid = randomId()
