@@ -8,19 +8,15 @@ import {
 
 import {dragEdgeBehavior, dragStationBehavior} from "./drag"
 import {UserSelection} from "./selection"
-import {Vec} from "./vec"
-import {loadCity} from "./loadCity"
-import {
-  RouteDiagramModel,
-  RouteGroupModel,
-  RouteModel,
-  StationModel,
-} from "./model"
+import {Vec} from "./math/vec"
+import {loadCity} from "./fetch/loadCity"
+import {Model} from "./data/model"
+import {Mutate} from "./data/mutate"
 
 export class App {
   svg: d3.Selection<SVGElement, any, any, any>
 
-  routeDiagram: RouteDiagramModel = new RouteDiagramModel()
+  diagram: Model.Diagram = Mutate.newEmptyDiagram()
 
   userSelection: UserSelection = new UserSelection(this)
 
@@ -35,8 +31,8 @@ export class App {
         .attr("id", groupId)
     }
 
-    loadCity(this.routeDiagram)
-    console.log(this.routeDiagram)
+    this.diagram = loadCity()
+    console.log(this.diagram)
 
     // let r = new RouteModel(new RouteGroupModel("black"), "def")
     // r.pushStation(new StationModel(Vec.pair(0, 0), "Pałac Kultury i Nauki"), null)
@@ -52,11 +48,12 @@ export class App {
   draw() {
     console.log("Updating elements.")
 
-    let layout = new RouteDiagramLayout(this.routeDiagram)
+    let layout = new RouteDiagramLayout(this.diagram)
 
     d3.select("#edges")
       .selectAll("*")
-      .data(layout.routes.values(), (layout: RouteLayout) => layout.model.uuid)
+    // @ts-ignore
+      .data(layout.routes.values(), (layout: RouteLayout) => layout.model.id as string)
       .join(enter => enter.append("path")
         .attr("fill", "none")
         .call(dragEdgeBehavior(this)),
@@ -78,7 +75,8 @@ export class App {
     let app = this
     d3.select("#stations")
       .selectAll("*")
-      .data(layout.stations.values(), (layout: StationLayout) => layout.model.uuid)
+    // @ts-ignore
+      .data(layout.stations.values(), (layout: StationLayout) => layout.model.id)
       .join(enter =>
         enter.append("path")
           .on("click", (event: MouseEvent, station) => {
@@ -98,7 +96,8 @@ export class App {
 
     d3.select("#stations2")
       .selectAll("*")
-      .data([...layout.stations.values()].filter(station => this.userSelection.has(station)), (station: StationLayout) => station.model.uuid)
+    // @ts-ignore
+      .data([...layout.stations.values()].filter(station => this.userSelection.has(station)), (station: StationLayout) => station.model.id)
       .join("text")
       // .classed("selected", station => this.userSelection.has(station))
       .text(station => station.model.name)

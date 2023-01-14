@@ -1,7 +1,7 @@
 import * as d3 from "d3"
 import {App} from "./index"
-import {Vec} from "./vec"
-import {EdgeModel, StationModel} from "./model"
+import {Vec} from "./math/vec"
+import {EdgeModel, StationModel} from "./data/model"
 import {StationLayout} from "./layout"
 
 

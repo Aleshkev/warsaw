@@ -1,6 +1,7 @@
 // import  from "uuid"
 
 import {v4} from "uuid"
+import {List} from "immutable"
 
 export function getOrDefault<K, V>(map: Map<K, V>, key: K, defaultValue: V) {
   return map.get(key) ?? defaultValue
@@ -21,4 +22,8 @@ export function randomId() {
 
 export function arraysEqual<T>(a: T[], b: T[]) {
   return a.length == b.length && a.every((x, i) => a[i] == b[i])
+}
+
+export function removeAdjacentDuplicates<T>(a: List<T>) {
+  return a.filter((x, i) => x != a.get(i + 1))
 }

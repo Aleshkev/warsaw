@@ -1,5 +1,5 @@
-import {xy} from "./geo"
-import {Vec} from "./vec"
+import {xy} from "./math/geo"
+import {Vec} from "./math/vec"
 
 export function roundedRectangle(a: xy, b: xy, r: number) {
   let c = Vec.pair(b.x, a.y), d = Vec.pair(a.x, b.y)

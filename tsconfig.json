@@ -7,6 +7,7 @@
     "noImplicitAny": false,
     "strictNullChecks": true,
     "sourceMap": true,
+    "strict": true,
     "jsx": "react",
     "noLib": false,
     "allowJs": true,

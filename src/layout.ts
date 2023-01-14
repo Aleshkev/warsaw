@@ -1,19 +1,16 @@
-import {Angle, xy} from "./geo"
-import {Vec} from "./vec"
+import {Angle, xy} from "./math/geo"
+import {Vec} from "./math/vec"
 import {
-  EdgeModel,
-  RouteDiagramModel,
-  RouteGroupModel,
-  RouteModel,
-  StationModel,
-} from "./model"
+  Model,
+} from "./data/model"
 import * as d3 from "d3"
 import {roundedRectangle} from "./shapes"
 import {arraysEqual, getOrPut} from "./util"
-import {Angles} from "./angles"
+import {Angles} from "./math/angles"
+import {List} from "immutable"
 
 export class StationLayout {
-  model: StationModel
+  model: Model.Station
   outgoingEdges: Map<Angle, EdgeLayout[]> = new Map<Angle, EdgeLayout[]>()
 
   simpleStationAngle: Angle | null = null
@@ -23,7 +20,7 @@ export class StationLayout {
   // size: xy
   // rotation: Angle = {a: 0}
 
-  constructor(station: StationModel) {
+  constructor(station: Model.Station) {
     this.model = station
   }
 
@@ -73,12 +70,12 @@ export class StationLayout {
 
 
 export class EdgeLayout {
-  model: EdgeModel
+  // model: EdgeModel
   route: RouteLayout
   stations: [StationLayout, StationLayout]
 
-  constructor(edge: EdgeModel, route: RouteLayout, stations: readonly [StationLayout, StationLayout]) {
-    this.model = edge
+  constructor(route: RouteLayout, stations: readonly [StationLayout, StationLayout]) {
+    // this.model = edge
     this.route = route
     this.stations = [...stations]
   }
@@ -88,20 +85,22 @@ export class EdgeLayout {
 }
 
 export class RouteLayout {
-  model: RouteModel
-  stations: StationLayout[] = []
+  diagram: Model.Diagram
+  model: Model.Route
+  stations: List<StationLayout> = List()
   edges: EdgeLayout[] = []
 
-  constructor(route: RouteModel, stations: readonly StationLayout[]) {
+  constructor(diagram: Model.Diagram, route: Model.Route, stations: List<StationLayout>) {
+    this.diagram = diagram
     this.model = route
-    this.stations = [...stations]
-    for (let i = 0; i + 1 < stations.length; ++i) {
-      this.edges.push(new EdgeLayout(this.model.edges[i], this, [this.stations[i], this.stations[i + 1]]))
+    this.stations = stations
+    for (let i = 0; i + 1 < stations.toArray().length; ++i) {
+      this.edges.push(new EdgeLayout(this, [this.stations.get(i), this.stations.get(i + 1)]))
     }
   }
 
   static customizePath(selection: d3.Selection<any, RouteLayout, any, any>) {
-    selection.style("stroke", route => route.model.getColor())
+    selection.style("stroke", route => Model.getRouteColor(route.diagram, route.model))
   }
 
   toSVGPath() {
@@ -123,8 +122,8 @@ export class RouteLayout {
 
     let generator = d3.line().curve(d3.curveCatmullRom)
     let path = generator(points.map(point => [point.x, point.y]))
-    for (let i = 0; i < this.stations.length; ++i) {
-      let station = this.stations[i]
+    for (let i = 0; i < this.stations.toArray().length; ++i) {
+      let station = this.stations.get(i)
       let point = points[i]
       if (station.simpleStationAngle === null) continue
 
@@ -141,16 +140,18 @@ export class RouteLayout {
 }
 
 export class RouteDiagramLayout {
-  routes: Map<RouteModel, RouteLayout> = new Map()
-  stations: Map<StationModel, StationLayout> = new Map()
+  model: Model.Diagram
+  routes: Map<Model.Route, RouteLayout> = new Map()
+  stations: Map<Model.Station, StationLayout> = new Map()
 
-  constructor(routeDiagram: RouteDiagramModel) {
-    for (let station of routeDiagram.stations.values()) {
-      this.stations.set(station, new StationLayout(station))
+  constructor(diagram: Model.Diagram) {
+    this.model = diagram
+    for (let station of diagram.stations.values()) {
+      this.stations = this.stations.set(station, new StationLayout(station))
     }
-    for (let route of routeDiagram.routes.values()) {
-      let stationLayouts = route.stations.map(station => this.stations.get(station)!)
-      this.routes.set(route, new RouteLayout(route, stationLayouts))
+    for (let route of diagram.routes.values()) {
+      let stationLayouts = route.stations.map(station => this.stations.get(diagram.stations.get(station)!)!)
+      this.routes = this.routes.set(route, new RouteLayout(diagram, route, stationLayouts))
     }
 
     this.saveOutgoingEdges()
@@ -180,7 +181,7 @@ export class RouteDiagramLayout {
     for (let station of this.stations.values()) {
       for (let route of this.routes.values()) {
         if (route.stations.indexOf(station) !== -1) {
-          station.color = route.model.group.color
+          station.color = this.model.routeGroups.get(route.model.group)!.color
         }
       }
 
@@ -209,14 +210,10 @@ export class RouteDiagramLayout {
 
   assignShifts() {
     for (let station of this.stations.values()) {
-      if (station.model.name.match(/.*eszera.*/)) {
-        console.log(station.waitingForSlot)
-
-      }
       for (let [angle, waiting] of station.waitingForSlot.entries()) {
-        let waitingByGroup = new Map<RouteGroupModel, EdgeLayout[]>()
+        let waitingByGroup = new Map<Model.RouteGroup, EdgeLayout[]>()
         for (let edge of waiting) {
-          getOrPut(waitingByGroup, edge.route.model.group, []).push(edge)
+          getOrPut(waitingByGroup, this.model.routeGroups.get(edge.route.model.group)!, []).push(edge)
         }
 
         let groups = [...waitingByGroup.keys()]
