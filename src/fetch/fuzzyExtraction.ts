@@ -1,5 +1,6 @@
 import {OSMId} from "./common"
 import {Model} from "../data/model"
+import slugify from "slugify"
 
 export function extractStationName(s: string): string {
   if (s === "") return "station"
@@ -20,10 +21,10 @@ export function extractOSMId(s: string): OSMId | null {
   return id ? +id as OSMId : null
 }
 
-export function OSMIdToStationId(id: OSMId): Model.StationId {
-  return `osm-stop-${id}` as Model.StationId
+export function OSMIdToStationId(id: OSMId, name: string): Model.StationId {
+  return `osm-stop-${id}-${slugify(name)}` as Model.StationId
 }
 
-export function OSMIdToRouteId(id: OSMId): Model.RouteId {
-  return `osm-route-${id}` as Model.RouteId
+export function OSMIdToRouteId(id: OSMId, name: string): Model.RouteId {
+  return `osm-route-${id}-${slugify(name)}` as Model.RouteId
 }

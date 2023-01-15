@@ -8,6 +8,7 @@ import {loadCity} from "./fetch/loadCity"
 import {Model} from "./data/model"
 import {newEmptyDiagram} from "./data/mutateDiagram"
 import {autoPrettify} from "./data/prettify"
+import {logPretty} from "./util"
 
 export class App {
   svg: d3.Selection<SVGElement, any, any, any>
@@ -30,11 +31,8 @@ export class App {
     }
 
     this.diagram = autoPrettify(loadCity())
-    console.log(this.diagram)
-
-    // let r = new RouteModel(new RouteGroupModel("black"), "def")
-    // r.pushStation(new StationModel(Vec.pair(0, 0), "Pałac Kultury i Nauki"), null)
-    // this.routeDiagram.addRoute(r)
+    console.log(this.diagram.stations.toJS())
+    console.log(this.diagram.routes.toJS())
 
     this.draw()
     this.addResizeBehavior()
@@ -44,9 +42,7 @@ export class App {
   }
 
   draw() {
-
-    console.log("Updating elements.")
-
+    logPretty("updating layout...")
     let layout = new RouteDiagramLayout(this.diagram)
 
     d3.select("#edges")

@@ -6,7 +6,7 @@ import {
   extractOSMId,
   extractRouteName,
   extractStationName,
-  OSMIdToRouteId,
+  OSMIdToRouteId, OSMIdToStationId,
 } from "./fuzzyExtraction"
 import {OSMId} from "./common"
 import {newEmptyDiagram} from "../data/mutateDiagram"
@@ -72,7 +72,7 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
       let pixelPosition = getAveragePixelPosition(rawProjection, geoPositions)
 
       let model
-      [diagram, model] = addStation(diagram, name, pixelPosition)
+      [diagram, model] = addStation(diagram, OSMIdToStationId(it.id, name), name, pixelPosition)
 
       return {...it, name, geoPositions, pixelPosition, model}
     })
@@ -110,10 +110,11 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
       [diagram, group] = addRouteGroup(diagram, "", randomColor())
     }
 
-    // if (!route.stations.find(value => !!value.name.match("Krakowska"))) continue
+    // if (!route.stations.find(value => !!value.name.match("Krakowska")))
+    // continue
 
     let routeModel
-    [diagram, routeModel] = addRoute(diagram, OSMIdToRouteId(route.id), route.name, route.color, group, route.stations)
+    [diagram, routeModel] = addRoute(diagram, OSMIdToRouteId(route.id, route.name), route.name, route.color, group, route.stations)
   }
 
   return diagram

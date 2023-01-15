@@ -1,13 +1,12 @@
 import {Model} from "./model"
 import {xy} from "../math/geo"
-import {randomId} from "../util"
 import {List} from "immutable"
 import {Vec} from "../math/vec"
 import {updateRoute} from "./mutateRoute"
 
-export function addStation(diagram: Model.Diagram, name: string, position: xy): [Model.Diagram, Model.Station] {
+export function addStation(diagram: Model.Diagram, id: Model.StationId, name: string, position: xy): [Model.Diagram, Model.Station] {
   let station: Model.Station = {
-    id: randomId() as Model.StationId,
+    id,
     name,
     position,
   }
@@ -45,9 +44,9 @@ export function mergeStations(diagram: Model.Diagram, stationsToMerge: List<Mode
 
   let averagePosition: xy = Vec.div(Vec.sum(...stationsToMerge.map(it => it.position)), stationsToMerge.size)
   let averageName: string = stationsToMerge.map(it => it.name).maxBy(it => it.length)!
-  let averageId = `${stationsToMerge.get(0)?.id}-merged`
+  let averageId = `${stationsToMerge.get(0)?.id}-merged` as Model.StationId
   let newStation
-  [diagram, newStation] = addStation(diagram, averageName, averagePosition)
+  [diagram, newStation] = addStation(diagram, averageId, averageName, averagePosition)
 
   for (let route of diagram.routes.valueSeq()) {
     let stationsInRoute = route.stations
@@ -57,7 +56,7 @@ export function mergeStations(diagram: Model.Diagram, stationsToMerge: List<Mode
     [diagram, route] = updateRoute(diagram, route, {stations: stationsInRoute})
   }
 
-  for(let station of stationsToMerge) {
+  for (let station of stationsToMerge) {
     diagram = removeStation(diagram, station)
   }
 

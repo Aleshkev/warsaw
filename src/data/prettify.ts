@@ -2,9 +2,10 @@ import {Model} from "./model"
 import {mergeStations} from "./mutateStation"
 import {List, Map, Set} from "immutable"
 import {removeRoute} from "./mutateRoute"
+import {logPretty} from "../util"
 
 export function mergeStationsWithSimilarNames(diagram: Model.Diagram): Model.Diagram {
-  console.log("grouping stations with similar names...")
+  logPretty("grouping stations with similar names...")
   diagram.stations.valueSeq().groupBy(it => it.name).forEach((stations, name) => {
     let newStation
     [diagram, newStation] = mergeStations(diagram, stations.toList())
@@ -19,7 +20,7 @@ function isSubRoute(_diagram: Model.Diagram, routeA: Model.Route, routeB: Model.
 }
 
 export function mergeRoutesWithSimilarStations(diagram: Model.Diagram): Model.Diagram {
-  console.log("merging routes with similar stations...")
+  logPretty("merging routes with similar stations...")
 
   let routes = diagram.routes.valueSeq().toList()
 
