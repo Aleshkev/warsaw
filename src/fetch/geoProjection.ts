@@ -30,5 +30,5 @@ export function getAveragePixelPosition(rawProjection: RawProjection, geoPositio
   if (geoPositions.size == 0) return Vec.pair(0, 0)
   let [sumX, sumY] = geoPositions.reduce<[number, number]>(([x_1, y_1], [x_2, y_2]) => [x_1 + x_2, y_1 + y_2])
   let averageX = sumX / geoPositions.size, averageY = sumY / geoPositions.size
-  return Vec.pair(...rawProjection(averageX, averageY))
+  return Vec.round(Vec.pair(...rawProjection(averageX, averageY)), 8)
 }

@@ -1,11 +1,12 @@
 import {Model} from "./model"
 import {mergeStations} from "./mutateStation"
 import {List, Map, Set} from "immutable"
-import {removeRoute} from "./mutateRoute"
-import {logPretty} from "../util"
+import {removeRoute, updateRoute} from "./mutateRoute"
+import {logPretty, randomId} from "../util"
+import {addRouteGroup} from "./mutateRouteGroup"
 
 export function mergeStationsWithSimilarNames(diagram: Model.Diagram): Model.Diagram {
-  logPretty("grouping stations with similar names...")
+  console.log(...logPretty("grouping stations with similar names..."))
   diagram.stations.valueSeq().groupBy(it => it.name).forEach((stations, name) => {
     let newStation
     [diagram, newStation] = mergeStations(diagram, stations.toList())
@@ -13,14 +14,13 @@ export function mergeStationsWithSimilarNames(diagram: Model.Diagram): Model.Dia
   return diagram
 }
 
-
 function isSubRoute(_diagram: Model.Diagram, routeA: Model.Route, routeB: Model.Route, precision = 0) {
   let stationsInsideOfANotInsideOfB = routeA.stations.filter(it => !routeB.stations.contains(it))
   return stationsInsideOfANotInsideOfB.size <= precision
 }
 
 export function mergeRoutesWithSimilarStations(diagram: Model.Diagram): Model.Diagram {
-  logPretty("merging routes with similar stations...")
+  console.log(...logPretty("merging routes with similar stations..."))
 
   let routes = diagram.routes.valueSeq().toList()
 
@@ -62,8 +62,23 @@ export function groupRandomRoutes(diagram: Model.Diagram, maxNPassingLines = 3):
   return diagram
 }
 
+export function groupCategory(diagram: Model.Diagram, category: string, color: string = "blue"): Model.Diagram {
+  console.log(...logPretty(`grouping ${category} routes...`))
+
+  let newGroup
+  [diagram, newGroup] = addRouteGroup(diagram, randomId() as Model.RouteGroupId, category, color, category)
+  for(let route of diagram.routes.valueSeq()) {
+    if(diagram.routeGroups.get(route.group)!.category !== category) continue
+
+    [diagram, route] = updateRoute(diagram, route, {group: newGroup})
+  }
+  return diagram
+}
+
 export function autoPrettify(diagram: Model.Diagram): Model.Diagram {
   diagram = mergeStationsWithSimilarNames(diagram)
   diagram = mergeRoutesWithSimilarStations(diagram)
+  diagram = groupCategory(diagram, "train", `black`)
+  diagram = groupCategory(diagram, "tram", `#cb46e0`)
   return diagram
 }

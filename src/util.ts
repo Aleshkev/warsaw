@@ -28,8 +28,8 @@ export function removeAdjacentDuplicates<T>(a: List<T>) {
   return a.filter((x, i) => x != a.get(i + 1))
 }
 
-export function logPretty(message: string): void {
+export function logPretty(message: string): string[] {
   const color = `#232025`
   const backgroundColor = `#fceffc`
-  console.log(`%c${message}`, `color: ${color}; background-color: ${backgroundColor}; padding: 0 24px`)
+  return [`%c${message}`, `color: ${color}; background-color: ${backgroundColor}; padding: 0 24px`]
 }

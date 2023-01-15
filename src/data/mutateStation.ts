@@ -1,6 +1,6 @@
 import {Model} from "./model"
 import {xy} from "../math/geo"
-import {List} from "immutable"
+import {List, Set} from "immutable"
 import {Vec} from "../math/vec"
 import {updateRoute} from "./mutateRoute"
 
@@ -28,15 +28,20 @@ export function updateStation(diagram: Model.Diagram, station: Model.Station,
   }, newStation]
 }
 
-export function removeStation(diagram: Model.Diagram, stationToRemove: Model.Station): Model.Diagram {
+export function removeStations(diagram: Model.Diagram, stationsToRemove: Set<Model.Station>): Model.Diagram {
+  let stationIdsToRemove = stationsToRemove.map(it => it.id).toSet()
   for (let route of diagram.routes.valueSeq().toList()) {
     let stationsInRoute = route.stations
       .map(it => diagram.stations.get(it)!)
-      .filter(it => it.id !== stationToRemove.id)
+      .filter(it => !stationIdsToRemove.contains(it.id))
       .toList();
     [diagram, route] = updateRoute(diagram, route, {stations: stationsInRoute})
   }
-  return {...diagram, stations: diagram.stations.remove(stationToRemove.id)}
+  return {...diagram, stations: diagram.stations.removeAll(stationIdsToRemove)}
+}
+
+export function removeStation(diagram: Model.Diagram, stationToRemove: Model.Station): Model.Diagram {
+  return removeStations(diagram, Set([stationToRemove]))
 }
 
 export function mergeStations(diagram: Model.Diagram, stationsToMerge: List<Model.Station>): [Model.Diagram, Model.Station] {
@@ -56,9 +61,7 @@ export function mergeStations(diagram: Model.Diagram, stationsToMerge: List<Mode
     [diagram, route] = updateRoute(diagram, route, {stations: stationsInRoute})
   }
 
-  for (let station of stationsToMerge) {
-    diagram = removeStation(diagram, station)
-  }
+  diagram = removeStations(diagram, stationsToMerge.toSet())
 
   return [diagram, newStation]
 }

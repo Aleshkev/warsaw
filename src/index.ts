@@ -42,7 +42,7 @@ export class App {
   }
 
   draw() {
-    logPretty("updating layout...")
+    console.log(...logPretty("updating layout..."))
     let layout = new RouteDiagramLayout(this.diagram)
 
     d3.select("#edges")

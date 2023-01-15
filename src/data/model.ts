@@ -16,13 +16,14 @@ export namespace Model {
     id: RouteGroupId
     name: string
     color: string
+    category: string | null
   }>
 
   export type RouteId = string & { __brand: "RouteId" }
   export type Route = Readonly<{
     id: RouteId
     name: string
-    color: string | null  // If null, the color is inherited from the group.
+    color: string | null
 
     group: RouteGroupId
     stations: List<StationId>  // Stations in the route.

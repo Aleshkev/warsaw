@@ -133,7 +133,7 @@ export namespace Vec {
   }
 
 
-  // export function truncateAngle(alpha: Angle): Angle {
-  //   if(Math.abs(alpha))
-  // }
+  export function round(p: xy, r = 4): xy {
+    return Vec.pair(Math.round(p.x / r) * r, Math.round(p.y / r) * r)
+  }
 }

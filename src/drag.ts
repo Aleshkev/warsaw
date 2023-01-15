@@ -11,9 +11,11 @@ export function dragStationBehavior(app: App) {
       .on("start", (event, station: StationLayout) => {
         app.userSelection.setTo(station)
       })
+
       .on("drag", function (event, station: StationLayout) {
-        [app.diagram, ] = updateStation(app.diagram, station.model, {position: Vec.pair(Math.round(event.x / 4) * 4, Math.round(event.y / 4) * 4)})
+        [app.diagram, ] = updateStation(app.diagram, station.model, {position: Vec.round(event, 8)})
         // station.model.position =
+
         app.draw()
       }))
 }

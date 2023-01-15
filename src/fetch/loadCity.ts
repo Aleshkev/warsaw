@@ -11,7 +11,10 @@ import {
 import {OSMId} from "./common"
 import {newEmptyDiagram} from "../data/mutateDiagram"
 import {addStation} from "../data/mutateStation"
-import {addRoute, addRouteGroup} from "../data/mutateRoute"
+import {addRoute} from "../data/mutateRoute"
+import {addRouteGroup} from "../data/mutateRouteGroup"
+import {randomId} from "../util"
+import slugify from "slugify"
 
 function randomColor() {
   return `hsl(${Math.random() * 360}, 73%, 62%)`
@@ -80,6 +83,8 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
   const stationFeaturesById = stationFeatures
     .groupBy(it => it.id).map(it => it.get(0)!).toMap()
 
+  let groupsForRouteNames: Map<string, Model.RouteGroup> = Map()
+
   const routeFeatures = validFeatures.toSeq()
     .filter(it => allRoutes.has(it.id))
     .map(it => it as typeof it & { properties: RouteFeatureProperties })
@@ -94,28 +99,20 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
         .filter(it => it).map(it => it!)
         .toList()
 
-      return {...it, name, color, category, stationIds, stations}
+      let group
+      if(groupsForRouteNames.has(name)) {
+        group = groupsForRouteNames.get(name)
+      } else {
+        [diagram, group] = addRouteGroup(diagram, randomId() + slugify(name) as Model.RouteGroupId, name, color ?? "black", category)
+        groupsForRouteNames = groupsForRouteNames.set(name, group)
+      }
+
+      let model
+      [diagram, model] = addRoute(diagram, OSMIdToRouteId(it.id, name), name, null, group, stations)
+
+      return {...it, name, color, category, stationIds, stations, group, model}
     })
     .toList()
-  const routeFeaturesById = routeFeatures
-    .groupBy(it => it.id).map(it => it.get(0)!).toMap()
-
-
-  let color = "black"
-  let group;
-  [diagram, group] = addRouteGroup(diagram, "", color)
-  for (let route of routeFeaturesById.valueSeq()) {
-
-    if (Math.random() < 1) {
-      [diagram, group] = addRouteGroup(diagram, "", randomColor())
-    }
-
-    // if (!route.stations.find(value => !!value.name.match("Krakowska")))
-    // continue
-
-    let routeModel
-    [diagram, routeModel] = addRoute(diagram, OSMIdToRouteId(route.id, route.name), route.name, route.color, group, route.stations)
-  }
 
   return diagram
 }
