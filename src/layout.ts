@@ -1,4 +1,4 @@
-import {Angle, xy} from "./math/geo"
+import {angle, xy} from "./math/geo"
 import {Vec} from "./math/vec"
 import {
   Model,
@@ -6,14 +6,14 @@ import {
 import * as d3 from "d3"
 import {roundedRectangle} from "./shapes"
 import {arraysEqual, getOrPut} from "./util"
-import {Angles} from "./math/angles"
+import {Angle} from "./math/angle"
 import {List} from "immutable"
 
 export class StationLayout {
   model: Model.Station
-  outgoingEdges: Map<Angle, EdgeLayout[]> = new Map<Angle, EdgeLayout[]>()
+  outgoingEdges: Map<angle, EdgeLayout[]> = new Map<angle, EdgeLayout[]>()
 
-  simpleStationAngle: Angle | null = null
+  simpleStationAngle: angle | null = null
 
   waitingForSlot: Map<number, EdgeLayout[]> = new Map<number, EdgeLayout[]>()
 
@@ -35,7 +35,7 @@ export class StationLayout {
   }
 
   simpleStationPath() {
-    let angle = this.simpleStationAngle ?? 0 as Angle
+    let angle = this.simpleStationAngle ?? 0 as angle
     let perpendicular = Vec.mul(Vec.unit(angle), 20)
     // let a = this.model.position
     let a = Vec.sub(this.model.position, perpendicular)
@@ -80,7 +80,7 @@ export class EdgeLayout {
     this.stations = [...stations]
   }
 
-  assignedAngles: [Angle, Angle] = [0 as Angle, 0 as Angle]
+  assignedAngles: [angle, angle] = [0 as angle, 0 as angle]
   assignedShifts: [xy, xy] = [Vec.pair(0, 0), Vec.pair(0, 0)]
 }
 
@@ -166,7 +166,7 @@ export class RouteDiagramLayout {
         for (let i = 0; i < 2; ++i) {
           let angle = Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)
           for (let existingAngle of edge.stations[i].outgoingEdges.keys()) {
-            if (Angles.equals(angle, existingAngle)) {
+            if (Angle.equals(angle, existingAngle)) {
               angle = existingAngle
               break
             }
@@ -186,8 +186,8 @@ export class RouteDiagramLayout {
       let linesA = [...station.outgoingEdges.get(a)!].map(edge => edge.route).sort()
       let linesB = [...station.outgoingEdges.get(b)!].map(edge => edge.route).sort()
       if (!arraysEqual(linesA, linesB)) continue
-      let alpha = Angles.average(a, b)
-      station.simpleStationAngle = Angles.add(alpha, Math.PI as Angle)
+      let alpha = Angle.average(a, b)
+      station.simpleStationAngle = Angle.add(alpha, Math.PI as angle)
     }
   }
 
@@ -195,7 +195,7 @@ export class RouteDiagramLayout {
     for (let route of this.routes.values()) {
       for (let edge of route.edges) {
         for (let i = 0; i < 2; ++i) {
-          edge.assignedAngles[i] = Angles.halfCircle(Angles.round(Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)))
+          edge.assignedAngles[i] = Angle.halfCircle(Angle.round(Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)))
           getOrPut(edge.stations[i].waitingForSlot, edge.assignedAngles[i], []).push(edge)
         }
       }
@@ -215,7 +215,7 @@ export class RouteDiagramLayout {
         let n = groups.length
         for (let i = 0; i < n; ++i) {
           let group = groups[i]
-          let baseShift = Vec.mul(Vec.unit(angle + Math.PI / 2 as Angle), 10)
+          let baseShift = Vec.mul(Vec.unit(angle + Math.PI / 2 as angle), 10)
           let shift = Vec.mul(baseShift, i - (n - 1) / 2)
           for (let edge of waitingByGroup.get(group)!) {
             edge.assignedShifts[edge.stations[0] === station ? 0 : 1] = shift

@@ -1,4 +1,4 @@
-import {Angle, xy} from "./geo"
+import {angle, xy} from "./geo"
 
 export namespace Vec {
   export function pair(x: number, y: number): xy {
@@ -9,15 +9,15 @@ export namespace Vec {
     return Math.abs(a.x - b.x) < eps && Math.abs(a.y - b.y) < eps
   }
 
-  export function unit(alpha: Angle): xy {
+  export function unit(alpha: angle): xy {
     return {x: Math.cos(alpha), y: Math.sin(alpha)}
   }
 
-  export function toAngle(v: xy): Angle {
-    return Math.atan2(v.y, v.x) as Angle
+  export function toAngle(v: xy): angle {
+    return Math.atan2(v.y, v.x) as angle
   }
 
-  export function toAngle2(a: xy, b: xy): Angle {
+  export function toAngle2(a: xy, b: xy): angle {
     return toAngle(Vec.sub(b, a))
   }
 
@@ -78,7 +78,7 @@ export namespace Vec {
     return Vec.cross(Vec.sub(a, p), Vec.sub(b, p))
   }
 
-  export function rotate(a: xy, alpha: Angle): xy {
+  export function rotate(a: xy, alpha: angle): xy {
     return pair(a.x * Math.cos(alpha) - a.y * Math.sin(alpha),
       a.x * Math.sin(alpha) + a.y * Math.cos(alpha))
   }
@@ -120,8 +120,8 @@ export namespace Vec {
 // 1. `p + a + b == q`
 // 2. `a` is at angle `alpha`
 // 3. `b` is at angle `alpha +- 45°`
-  export function manhattanDistances(p: xy, alpha: Angle, q: xy) {
-    let A = Vec.distanceToLine(p, q, Vec.add(q, Vec.unit(alpha + Math.PI / 2 as Angle)))
+  export function manhattanDistances(p: xy, alpha: angle, q: xy) {
+    let A = Vec.distanceToLine(p, q, Vec.add(q, Vec.unit(alpha + Math.PI / 2 as angle)))
     let B = Vec.distanceToLine(q, p, Vec.add(p, Vec.unit(alpha)))
     let a = A - B
     let b = B * Math.sqrt(2)

@@ -1,23 +1,24 @@
 import {Vec} from "./vec"
 
+// A vector or a point.
 export type xy = Readonly<{ x: number, y: number }>
-export type Line = [xy, xy] & { __brand: "Line" }  // Or segment.
-export type Polygon = xy[] & { __brand: "Polygon" }
-export type Angle = number & { __brand: "Angle" }
 
-export function radToDeg(radians: number) {
-  return 180 * radians / Math.PI
+// A line or a segment.
+export type line = [xy, xy] & { __brand: "Line" }
+
+// A polygon.
+export type polygon = xy[] & { __brand: "Polygon" }
+
+// Angle in radians.
+export type angle = number & { __brand: "Angle" }
+
+export function lineFromPointAndAngle(point: xy, angle: angle): line {
+  return [point, Vec.add(point, Vec.unit(angle))] as line
 }
-
-export function lineFromPointAndAngle(point: xy, angle: Angle): Line {
-  return [point, Vec.add(point, Vec.unit(angle))] as Line
-}
-
-
 
 // From
 // https://dirask.com/posts/JavaScript-calculate-intersection-point-of-two-lines-for-given-4-points-VjvnAj.
-export function intersectionOfLines(line_1: Line, line_2: Line): xy | null {
+export function intersectionOfLines(line_1: line, line_2: line): xy | null {
   let [p1, p2] = line_1
   let [p3, p4] = line_2
   let c2x = p3.x - p4.x // (x3 - x4)
