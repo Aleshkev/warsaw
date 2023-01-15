@@ -1,16 +1,17 @@
 import {FeatureCollection, Geometry, Position} from "geojson"
-import {Vec} from "../math/vec"
 import {Model} from "../data/model"
 import {getAveragePixelPosition, getRawProjection} from "./geoProjection"
-import {List, Map, Seq, Set} from "immutable"
+import {List, Map, Seq} from "immutable"
 import {
   extractOSMId,
   extractRouteName,
   extractStationName,
+  OSMIdToRouteId,
 } from "./fuzzyExtraction"
 import {OSMId} from "./common"
-import {Mutate} from "../data/mutate"
-import {arraysEqual, removeAdjacentDuplicates} from "../util"
+import {newEmptyDiagram} from "../data/mutateDiagram"
+import {addStation} from "../data/mutateStation"
+import {addRoute, addRouteGroup} from "../data/mutateRoute"
 
 function randomColor() {
   return `hsl(${Math.random() * 360}, 73%, 62%)`
@@ -38,19 +39,17 @@ function getOsmRoutes(): Map<OSMId, List<OSMId>> {
 }
 
 
-export function loadCity(): Model.Diagram {
-
+export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diagram {
   const rawProjection = getRawProjection()
 
   const routeToStations = getOsmRoutes()
   const allRoutes = routeToStations.keySeq().toSet()
   const allStations = routeToStations.valueSeq().flatMap(it => it).toSet()
-  console.log(routeToStations.toJS(), allRoutes.toJS(), allStations.toJS())
   type OurFeatureProperties = { name: string, ["@id"]: string }
   type RouteFeatureProperties = OurFeatureProperties & {
-    route: string | undefined // "subway"
-    ref: string | undefined // "M1"
-    colour: string | undefined // "blue"
+    route?: string // "subway"
+    ref?: string // "M1"
+    colour?: string // "blue", "#E74A4A"
   }
   type OurFeatureCollection = FeatureCollection<Geometry, OurFeatureProperties>
   // @ts-ignore
@@ -61,80 +60,62 @@ export function loadCity(): Model.Diagram {
     .filter(it => it.properties && it.properties.name && it.id && it.geometry)
     .map(it => ({...it, id: it.id!}))  // Can't be undefined now.
 
-  const routeFeatures = validFeatures.toSeq()
-    .filter(it => allRoutes.has(it.id))
-    .map(it => it as typeof it & { properties: RouteFeatureProperties })
-    .map(it => ({
-      ...it,
-      stations: routeToStations.get(it.id) ?? [],
-      name: it.properties.ref ?? extractRouteName(it.properties.name),
-      color: it.properties.colour ?? null,
-      type: it.properties.route ?? "other",
-    }))
-  const routeFeaturesById = routeFeatures
-    .groupBy(it => it.id)
-    .map(it => it.get(0)!)
-    .toMap()
-
   const stationFeatures = validFeatures.toSeq()
     .filter(it => allStations.has(it.id))
-    .map(it => ({
-      ...it,
-      name: extractStationName(it.properties.name),
-      geoPositions: (
+    .map(it => {
+      let name = extractStationName(it.properties.name)
+
+      let geoPositions = (
         it.geometry.type === "Polygon" ? List(...it.geometry.coordinates)
           : it.geometry.type === "Point" ? List([it.geometry.coordinates])
-            : List<Position>()).map<[number, number]>(it => [it[0] ?? 0, it[1] ?? 0]).toList(),
-    }))
+            : List<Position>()).map<[number, number]>(it => [it[0] ?? 0, it[1] ?? 0]).toList()
+      let pixelPosition = getAveragePixelPosition(rawProjection, geoPositions)
+
+      let model
+      [diagram, model] = addStation(diagram, name, pixelPosition)
+
+      return {...it, name, geoPositions, pixelPosition, model}
+    })
+    .toList()
   const stationFeaturesById = stationFeatures
     .groupBy(it => it.id).map(it => it.get(0)!).toMap()
 
+  const routeFeatures = validFeatures.toSeq()
+    .filter(it => allRoutes.has(it.id))
+    .map(it => it as typeof it & { properties: RouteFeatureProperties })
+    .map(it => {
+      let name = it.properties.ref ?? extractRouteName(it.properties.name)
+      let color = it.properties.colour ?? null
+      let category = it.properties.route ?? "other"
 
-  let diagram = Mutate.newEmptyDiagram()
+      let stationIds = routeToStations.get(it.id) ?? List()
+      let stations: List<Model.Station> = stationIds
+        .map(id => stationFeaturesById.get(id)?.model)
+        .filter(it => it).map(it => it!)
+        .toList()
 
-  const stationsByName = stationFeatures
-    .groupBy(it => it.name)
-    .map((features, name) => {
-      let model
-      let allGeoPositions: List<[number, number]> = features.map(feature => feature.geoPositions).flatMap(it => it).toList();
-      [diagram, model] = Mutate.addStation(diagram, name,
-        getAveragePixelPosition(rawProjection, allGeoPositions))
-      return {features, model: model as Model.Station}
+      return {...it, name, color, category, stationIds, stations}
     })
-    .toMap()
+    .toList()
+  const routeFeaturesById = routeFeatures
+    .groupBy(it => it.id).map(it => it.get(0)!).toMap()
+
 
   let color = "black"
   let group;
-  [diagram, group] = Mutate.addRouteGroup(diagram, "", color)
-  let addedRoutes: Set<List<Model.Station>> = Set()
-  for (let stationsInRoute of routeToStations.values()) {
+  [diagram, group] = addRouteGroup(diagram, "", color)
+  for (let route of routeFeaturesById.valueSeq()) {
 
     if (Math.random() < 1) {
-      [diagram, group] = Mutate.addRouteGroup(diagram, "", randomColor())
+      [diagram, group] = addRouteGroup(diagram, "", randomColor())
     }
-    let route
-    let stations: List<Model.Station> = stationsInRoute.map(id => {
-      let name = stationFeaturesById.get(id)?.name
-      if (!name) return undefined
-      return stationsByName.get(name)!.model
-    }).filter(it => it).map(it => it!).toList()
-    stations = removeAdjacentDuplicates(stations)
 
-    let unique = true
-    for (let x of addedRoutes) {
-      if (arraysEqual(x.toArray(), stations.sortBy(station => station.id).toArray())) {
-        unique = false
-      }
-    }
-    if (!unique) continue
-    addedRoutes = addedRoutes.add(stations.sortBy(station => station.id))
-    console.log(addedRoutes.filter(route => route.find(value => !!value.name.match("Krakowska"))).map(route => route.sort()).toJS())
-    ;
-    [diagram, route] = Mutate.addRoute(diagram, "?", null, group, stations)
+    // if (!route.stations.find(value => !!value.name.match("Krakowska"))) continue
+
+    let routeModel
+    [diagram, routeModel] = addRoute(diagram, OSMIdToRouteId(route.id), route.name, route.color, group, route.stations)
   }
 
-  console.log(diagram)
-  console.log(diagram.routes.toJS())
   return diagram
 }
 

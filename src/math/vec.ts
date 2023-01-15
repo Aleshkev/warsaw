@@ -10,11 +10,11 @@ export namespace Vec {
   }
 
   export function unit(alpha: Angle): xy {
-    return {x: Math.cos(alpha.a), y: Math.sin(alpha.a)}
+    return {x: Math.cos(alpha), y: Math.sin(alpha)}
   }
 
   export function toAngle(v: xy): Angle {
-    return {a: Math.atan2(v.y, v.x)}
+    return Math.atan2(v.y, v.x) as Angle
   }
 
   export function toAngle2(a: xy, b: xy): Angle {
@@ -25,7 +25,8 @@ export namespace Vec {
     return {x: a.x + b.x, y: a.y + b.y}
   }
 
-  export function sum(a: xy, ...more: xy[]) {
+  export function sum(...more: xy[]) {
+    let a = Vec.pair(0, 0)
     for (let b of more) a = Vec.add(a, b)
     return a
   }
@@ -36,6 +37,10 @@ export namespace Vec {
 
   export function mul(a: xy, c: number): xy {
     return {x: a.x * c, y: a.y * c}
+  }
+
+  export function div(a: xy, c: number): xy {
+    return {x: a.x / c, y: a.y / c}
   }
 
   export function dot(a: xy, b: xy): number {
@@ -74,8 +79,8 @@ export namespace Vec {
   }
 
   export function rotate(a: xy, alpha: Angle): xy {
-    return pair(a.x * Math.cos(alpha.a) - a.y * Math.sin(alpha.a),
-      a.x * Math.sin(alpha.a) + a.y * Math.cos(alpha.a))
+    return pair(a.x * Math.cos(alpha) - a.y * Math.sin(alpha),
+      a.x * Math.sin(alpha) + a.y * Math.cos(alpha))
   }
 
   export function map(f: (xOrY: number) => number, a: xy): xy {
@@ -116,7 +121,7 @@ export namespace Vec {
 // 2. `a` is at angle `alpha`
 // 3. `b` is at angle `alpha +- 45°`
   export function manhattanDistances(p: xy, alpha: Angle, q: xy) {
-    let A = Vec.distanceToLine(p, q, Vec.add(q, Vec.unit({a: alpha.a + Math.PI / 2})))
+    let A = Vec.distanceToLine(p, q, Vec.add(q, Vec.unit(alpha + Math.PI / 2 as Angle)))
     let B = Vec.distanceToLine(q, p, Vec.add(p, Vec.unit(alpha)))
     let a = A - B
     let b = B * Math.sqrt(2)
@@ -126,7 +131,6 @@ export namespace Vec {
   export function toString(p: xy) {
     return `${p.x}, ${p.y}`
   }
-
 
 
   // export function truncateAngle(alpha: Angle): Angle {

@@ -1,22 +1,20 @@
 import * as d3 from "d3"
-import {D3ZoomEvent, sum} from "d3"
-import {
-  RouteDiagramLayout,
-  RouteLayout,
-  StationLayout,
-} from "./layout"
+import {D3ZoomEvent} from "d3"
+import {RouteDiagramLayout, RouteLayout, StationLayout} from "./layout"
 
-import {dragEdgeBehavior, dragStationBehavior} from "./drag"
+import {dragStationBehavior} from "./drag"
 import {UserSelection} from "./selection"
-import {Vec} from "./math/vec"
 import {loadCity} from "./fetch/loadCity"
 import {Model} from "./data/model"
-import {Mutate} from "./data/mutate"
+import {newEmptyDiagram} from "./data/mutateDiagram"
+import {autoPrettify} from "./data/prettify"
 
 export class App {
   svg: d3.Selection<SVGElement, any, any, any>
 
-  diagram: Model.Diagram = Mutate.newEmptyDiagram()
+  diagram: Model.Diagram = newEmptyDiagram()
+
+  lastDraw: Date | null = null
 
   userSelection: UserSelection = new UserSelection(this)
 
@@ -31,7 +29,7 @@ export class App {
         .attr("id", groupId)
     }
 
-    this.diagram = loadCity()
+    this.diagram = autoPrettify(loadCity())
     console.log(this.diagram)
 
     // let r = new RouteModel(new RouteGroupModel("black"), "def")
@@ -46,6 +44,7 @@ export class App {
   }
 
   draw() {
+
     console.log("Updating elements.")
 
     let layout = new RouteDiagramLayout(this.diagram)
@@ -56,7 +55,7 @@ export class App {
       .data(layout.routes.values(), (layout: RouteLayout) => layout.model.id as string)
       .join(enter => enter.append("path")
         .attr("fill", "none")
-        .call(dragEdgeBehavior(this)),
+        // .call(dragEdgeBehavior(this)),
       )
       // .transition()
       // .duration(200)
@@ -114,7 +113,7 @@ export class App {
         // .ease(d3.easeQuadOut)
         .attr("transform", event.transform.toString())
     }
-    let zoom = d3.zoom()
+    let zoom = d3.zoom<SVGElement, any>()
       .on("zoom", handleZoom)
       // .scaleExtent([.20, 5])
       .duration(100)

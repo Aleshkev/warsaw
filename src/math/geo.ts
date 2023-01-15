@@ -1,40 +1,19 @@
 import {Vec} from "./vec"
 
-export type xy = { readonly x: number, readonly y: number }
-export type Line = [xy, xy]  // Or segment.
-export type Polygon = xy[]
-export type Angle = { readonly a: number }
+export type xy = Readonly<{ x: number, y: number }>
+export type Line = [xy, xy] & { __brand: "Line" }  // Or segment.
+export type Polygon = xy[] & { __brand: "Polygon" }
+export type Angle = number & { __brand: "Angle" }
 
 export function radToDeg(radians: number) {
   return 180 * radians / Math.PI
 }
 
 export function lineFromPointAndAngle(point: xy, angle: Angle): Line {
-  return [point, Vec.add(point, Vec.unit(angle))]
+  return [point, Vec.add(point, Vec.unit(angle))] as Line
 }
 
-type DiscreteAngle = { dA: number }
 
-
-export function diagramAlignmentAngles(a: xy, b: xy): [Angle, Angle] {
-  let delta = Vec.sub(b, a)
-  let angle = {a: Math.round(Vec.toAngle(delta).a / (Math.PI / 4)) * Math.PI / 4}
-  return [angle, angle]
-}
-
-export function pointsFromAlignmentAngles(a: xy, b: xy, angleA: Angle, angleB: Angle) {
-  if(angleA === angleB) {
-    return [a, b]
-  }
-  return [a, b]
-}
-export function alignAngle(alpha: Angle): DiscreteAngle {
-  return {dA: (8 + Math.round(alpha.a / (Math.PI / 4))) % 8}
-}
-
-export function unalignAngle(alpha: DiscreteAngle): Angle {
-  return {a: alpha.dA * Math.PI / 4}
-}
 
 // From
 // https://dirask.com/posts/JavaScript-calculate-intersection-point-of-two-lines-for-given-4-points-VjvnAj.

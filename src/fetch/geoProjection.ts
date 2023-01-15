@@ -15,10 +15,10 @@ export function getRawProjection(center: [number, number] = [21.006188, 52.23181
     .center(center)
     .translate([0, 0])  // The default isn't zero 🥹 so much debugging
     .angle(-19)
-  return (x, y) => baseProjection([x, y])!
+  return (x, y) => roundPosition(...baseProjection([x, y]) ?? [0, 0])
 }
 
-function getProjection(rawProjection: RawProjection) {
+export function getProjection(rawProjection: RawProjection) {
   return d3.geoTransform({
     point: function (x, y) {
       this.stream.point(...rawProjection(x, y))
