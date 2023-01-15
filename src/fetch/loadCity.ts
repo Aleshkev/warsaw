@@ -5,10 +5,9 @@ import {List, Map, Seq} from "immutable"
 import {
   extractOSMId,
   extractRouteName,
-  extractStationName,
+  extractStationName, OSMId,
   OSMIdToRouteId, OSMIdToStationId,
 } from "./fuzzyExtraction"
-import {OSMId} from "./common"
 import {newEmptyDiagram} from "../data/mutateDiagram"
 import {addStation} from "../data/mutateStation"
 import {addRoute} from "../data/mutateRoute"
@@ -17,7 +16,11 @@ import {randomId} from "../util"
 import slugify from "slugify"
 
 function randomColor() {
-  return `hsl(${Math.random() * 360}, 73%, 62%)`
+  // `hsl(0, 73%, 62%)`
+  // `hsl(50, 73%, 62%)`
+  // `hsl(100, 73%, 62%)`
+  // `hsl(64, 28%, 64%)`
+  return `hsla(${Math.random() * 180}, 73%, 62%, 40%)`
 }
 
 function getOsmRoutes(): Map<OSMId, List<OSMId>> {
@@ -42,6 +45,8 @@ function getOsmRoutes(): Map<OSMId, List<OSMId>> {
 }
 
 
+// Downloads diagram of a real-world city. Doesn't clean it up in any way:
+// stations have duplicates, routes have duplicates.
 export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diagram {
   const rawProjection = getRawProjection()
 
@@ -100,7 +105,7 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
         .toList()
 
       let group
-      if(groupsForRouteNames.has(name)) {
+      if (groupsForRouteNames.has(name)) {
         group = groupsForRouteNames.get(name)
       } else {
         [diagram, group] = addRouteGroup(diagram, randomId() + slugify(name) as Model.RouteGroupId, name, color ?? "black", category)
@@ -108,7 +113,7 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
       }
 
       let model
-      [diagram, model] = addRoute(diagram, OSMIdToRouteId(it.id, name), name, null, group, stations)
+      [diagram, model] = addRoute(diagram, OSMIdToRouteId(it.id, name), name, category === "tram" ? randomColor() : null, group, stations)
 
       return {...it, name, color, category, stationIds, stations, group, model}
     })
@@ -116,4 +121,3 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
 
   return diagram
 }
-

@@ -1,6 +1,8 @@
-import {OSMId} from "./common"
 import {Model} from "../data/model"
 import slugify from "slugify"
+
+// Id of an OSM feature.
+export type OSMId = number & { __brand: "OSMId" }
 
 export function extractStationName(s: string): string {
   if (s === "") return "station"
@@ -15,6 +17,7 @@ export function extractRouteName(s: string): string {
   if (match_2) s = match_2[1]
   return s
 }
+
 
 export function extractOSMId(s: string): OSMId | null {
   let id = s.match(/[0-9]+/)?.[0]

@@ -20,13 +20,13 @@ export namespace Angle {
     return Vec.toAngle(Vec.add(Vec.unit(a), Vec.unit(b)))
   }
 
-  export function halfCircle(a: angle): angle {
+  // If the angle is outside [-pi/2, pi/2), return the angle + 180 degrees so
+  // that it is inside this range. Effectively reduces angle of a vector to
+  // angle of a line.
+  export function vectorAngleToLineAngle(a: angle): angle {
     let x = a % Math.PI as angle
-    if(Math.abs(x) <= Math.PI / 2 && !Angle.equals( x, Math.PI / 2 as angle)) return x
-    if(x > 0) return x - Math.PI as angle
+    if (Math.abs(x) <= Math.PI / 2 && !Angle.equals(x, Math.PI / 2 as angle)) return x
+    if (x > 0) return x - Math.PI as angle
     return x + Math.PI as angle
-    // let y = (x + Math.PI) % Math.PI
-    // let z = (x - Math.PI) % Math.PI
-    // return Angles.of(Math.abs(x) < Math.abs(y) ? x : y)
   }
 }

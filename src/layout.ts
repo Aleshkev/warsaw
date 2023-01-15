@@ -195,7 +195,7 @@ export class RouteDiagramLayout {
     for (let route of this.routes.values()) {
       for (let edge of route.edges) {
         for (let i = 0; i < 2; ++i) {
-          edge.assignedAngles[i] = Angle.halfCircle(Angle.round(Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)))
+          edge.assignedAngles[i] = Angle.vectorAngleToLineAngle(Angle.round(Vec.toAngle2(edge.stations[i].model.position, edge.stations[1 - i].model.position)))
           getOrPut(edge.stations[i].waitingForSlot, edge.assignedAngles[i], []).push(edge)
         }
       }
