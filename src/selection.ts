@@ -1,5 +1,5 @@
 import {App} from "./index"
-import {StationLayout} from "./layout"
+import {StationLayout} from "./layout/computeLayout"
 
 type UserSelectableModel = { uuid: string }
 type UserSelectable = StationLayout

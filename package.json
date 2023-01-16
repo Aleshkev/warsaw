@@ -6,9 +6,9 @@
     "start": "npm run-p -l type-check:watch start:dev",
     "type-check": "tsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch",
-    "start:dev": "parcel ./src/index.html",
+    "start:dev": "parcel src/html/index.html",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "parcel build ./src/index.html --public-url ./ --no-scope-hoist",
+    "build": "parcel build src/html/index.html --public-url ./ --no-scope-hoist",
     "push-gh-pages": "push-dir --dir=dist --branch=gh-pages --cleanup --verbose",
     "deploy": "yarn run build && yarn run push-gh-pages"
   },

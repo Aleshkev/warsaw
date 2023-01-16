@@ -1,10 +1,11 @@
 import * as d3 from "d3"
 import {App} from "./index"
 import {Vec} from "./math/vec"
-import {StationLayout} from "./layout"
-import {updateStation} from "./data/mutateStation"
+import {StationLayout} from "./layout/computeLayout"
+import {updateStation} from "./model/mutateStation"
 
 
+// Dragging a station will set its position.
 export function dragStationBehavior(app: App) {
   return (selection: d3.Selection<any, StationLayout, any, any>) =>
     selection.call(d3.drag<Element, StationLayout>()
@@ -13,24 +14,7 @@ export function dragStationBehavior(app: App) {
       })
 
       .on("drag", function (event, station: StationLayout) {
-        [app.diagram, ] = updateStation(app.diagram, station.model, {position: Vec.round(event, 8)})
-        // station.model.position =
-
+        [app.diagram] = updateStation(app.diagram, station.model, {position: Vec.round(event, 8)})
         app.draw()
       }))
 }
-
-// export function dragEdgeBehavior(app: App) {
-//   return (selection: d3.Selection<any, any, any, any>) => {
-//     let dragged: EdgeModel | null = null
-//     selection.call(d3.drag()
-//       .on("start", (event: MouseEvent, edge: EdgeModel) => {
-//         dragged = edge
-//       })
-//       .on("drag", (event: MouseEvent, edge: EdgeModel) => {
-//         // edge.alignment = (Vec.cross(Vec.sub(edge.b.center, edge.a.center),
-//         // Vec.sub(event, edge.a.center)) > 0 ? "bendLeft" : "bendRight")
-//         app.draw()
-//       }))
-//   }
-// }

@@ -71,7 +71,6 @@ export namespace Vec {
     return Vec.norm(Vec.sub(b, a))
   }
 
-
   // (a - p) × (b - p), cross product of `a` and `b` interpreted as vectors with
   // origin of `p`.
   export function relate(p: xy, a: xy, b: xy): number {
@@ -91,18 +90,9 @@ export namespace Vec {
     return f(a.x, a.y)
   }
 
-  // export function projectToLine(p: xy, a: xy, b: xy): xy {
-  //
-  // }
-  //
-  // export function manhattanWalk(p: xy, alpha: Angle, q: xy) {
-  //
-  // }
-
   export function toSVGString(p: xy): string {
     return `${p.x} ${p.y}`
   }
-
 
   export function distanceToLine(p: xy, v: xy, w: xy, segmentInsteadOfLine: boolean = false) {
     let l2 = Vec.distance2(v, w)
@@ -114,7 +104,6 @@ export namespace Vec {
     }
     return Vec.distance(p, {x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y)})
   }
-
 
 // Returns [|a|, |b|] where
 // 1. `p + a + b == q`
@@ -131,7 +120,6 @@ export namespace Vec {
   export function toString(p: xy) {
     return `${p.x}, ${p.y}`
   }
-
 
   export function round(p: xy, r = 4): xy {
     return Vec.pair(Math.round(p.x / r) * r, Math.round(p.y / r) * r)

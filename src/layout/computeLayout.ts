@@ -1,13 +1,19 @@
-import {angle, xy} from "./math/geo"
-import {Vec} from "./math/vec"
+import {angle, xy} from "../math/geo"
+import {Vec} from "../math/vec"
 import {
   Model,
-} from "./data/model"
+} from "../model/model"
 import * as d3 from "d3"
-import {roundedRectangle} from "./shapes"
-import {arraysEqual, getOrPut} from "./util"
-import {Angle} from "./math/angle"
+import {roundedRectangle} from "../shapes"
+import {arraysEqual, getOrPut} from "../util"
+import {Angle} from "../math/angle"
 import {List} from "immutable"
+
+//
+//
+// TODO: Refactor all of this >:c
+//
+//
 
 export class StationLayout {
   model: Model.Station

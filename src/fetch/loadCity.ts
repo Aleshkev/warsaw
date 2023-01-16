@@ -1,5 +1,5 @@
 import {FeatureCollection, Geometry, Position} from "geojson"
-import {Model} from "../data/model"
+import {Model} from "../model/model"
 import {getAveragePixelPosition, getRawProjection} from "./geoProjection"
 import {List, Map, Seq} from "immutable"
 import {
@@ -8,10 +8,10 @@ import {
   extractStationName, OSMId,
   OSMIdToRouteId, OSMIdToStationId,
 } from "./fuzzyExtraction"
-import {newEmptyDiagram} from "../data/mutateDiagram"
-import {addStation} from "../data/mutateStation"
-import {addRoute} from "../data/mutateRoute"
-import {addRouteGroup} from "../data/mutateRouteGroup"
+import {newEmptyDiagram} from "../model/mutateDiagram"
+import {addStation} from "../model/mutateStation"
+import {addRoute} from "../model/mutateRoute"
+import {addRouteGroup} from "../model/mutateRouteGroup"
 import {randomId} from "../util"
 import slugify from "slugify"
 

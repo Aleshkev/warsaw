@@ -1,21 +1,24 @@
 import * as d3 from "d3"
 import {D3ZoomEvent} from "d3"
-import {RouteDiagramLayout, RouteLayout, StationLayout} from "./layout"
+import {RouteDiagramLayout, RouteLayout, StationLayout} from "./layout/computeLayout"
 
 import {dragStationBehavior} from "./drag"
 import {UserSelection} from "./selection"
 import {loadCity} from "./fetch/loadCity"
-import {Model} from "./data/model"
-import {newEmptyDiagram} from "./data/mutateDiagram"
-import {autoPrettify} from "./data/prettify"
+import {Model} from "./model/model"
+import {newEmptyDiagram} from "./model/mutateDiagram"
+import {autoPrettify} from "./model/prettify"
 import {logPretty} from "./util"
+import {List, Map} from "immutable"
 
+
+// The main entry point, and all global state.
 export class App {
+  // We draw stuff here.
   svg: d3.Selection<SVGElement, any, any, any>
 
+  // We store stuff here.
   diagram: Model.Diagram = newEmptyDiagram()
-
-  lastDraw: Date | null = null
 
   userSelection: UserSelection = new UserSelection(this)
 
@@ -24,7 +27,7 @@ export class App {
     this.svg.append("g")
       .attr("id", "content")
 
-    for (let groupId of ["city", "selections", "edges", "stations", "waypoints", "stations2"]) {
+    for (let groupId of ["city", "selections", "edges", "stations", "waypoints", "labels"]) {
       d3.select("#content")
         .append("g")
         .attr("id", groupId)
@@ -47,15 +50,11 @@ export class App {
 
     d3.select("#edges")
       .selectAll("*")
-    // @ts-ignore
-      .data(layout.routes.values(), (layout: RouteLayout) => layout.model.id as string)
+      .data(layout.routes.values())  // Workaround to make type check happy.
+      .data(layout.routes.values(), it => it.model.id as string)
       .join(enter => enter.append("path")
-        .attr("fill", "none")
-        // .call(dragEdgeBehavior(this)),
+        .attr("fill", "none"),
       )
-      // .transition()
-      // .duration(200)
-      // .ease(d3.easeCubicOut)
       .attr("d", layout => layout.toSVGPath())
       .call(RouteLayout.customizePath)
 
@@ -70,7 +69,7 @@ export class App {
     let app = this
     d3.select("#stations")
       .selectAll("*")
-    // @ts-ignore
+      // @ts-ignore
       .data(layout.stations.values(), (layout: StationLayout) => layout.model.id)
       .join(enter =>
         enter.append("path")
@@ -81,37 +80,29 @@ export class App {
             event.stopPropagation()
           }).call(dragStationBehavior(this)),
       )
-      .classed("selected", station => this.userSelection.has(station))
+      .classed("selected", it => this.userSelection.has(it))
       .call(StationLayout.customizePath)
-      // .attr("transform", station => stationLayouts.get(station).getSVGTransform())
-      // .transition()
-      // .duration(200)
-      // .ease(d3.easeQuadOut)
-      .attr("d", layout => layout.toSVGPath())
+      .attr("d", it => it.toSVGPath())
 
-    d3.select("#stations2")
+    d3.select("#labels")
       .selectAll("*")
-    // @ts-ignore
-      .data([...layout.stations.values()].filter(station => this.userSelection.has(station)), (station: StationLayout) => station.model.id)
+      .data(layout.stations.values())
+      .data(Map(layout.stations).valueSeq().filter(it => this.userSelection.has(it)), it => it.model.id)
       .join("text")
-      // .classed("selected", station => this.userSelection.has(station))
-      .text(station => station.model.name)
-      .attr("x", station => station.model.position.x)
-      .attr("y", station => station.model.position.y)
+      .text(it => it.model.name)
+      .attr("x", it => it.model.position.x)
+      .attr("y", it => it.model.position.y)
       .attr("text-anchor", "middle")
   }
 
   addZoomBehavior() {
     let handleZoom = (event: D3ZoomEvent<any, any>) => {
       d3.select("#content")
-        // .transition()
-        // .duration(25)
-        // .ease(d3.easeQuadOut)
         .attr("transform", event.transform.toString())
     }
     let zoom = d3.zoom<SVGElement, any>()
       .on("zoom", handleZoom)
-      // .scaleExtent([.20, 5])
+      .scaleExtent([.01, 20])
       .duration(100)
     this.svg
       .call(zoom)
@@ -129,6 +120,4 @@ export class App {
   }
 }
 
-let app = new App()
-// @ts-ignore
-window.app = app
+new App()

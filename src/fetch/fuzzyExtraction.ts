@@ -1,4 +1,4 @@
-import {Model} from "../data/model"
+import {Model} from "../model/model"
 import slugify from "slugify"
 
 // The id of an OSM feature.
