@@ -12,9 +12,14 @@
     "push-gh-pages": "push-dir --dir=dist --branch=gh-pages --cleanup --verbose",
     "deploy": "yarn run build && yarn run push-gh-pages"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "transit",
+    "diagram",
+    "mini",
+    "metro"
+  ],
+  "author": "@Aleshkev",
+  "license": "UNLICENSED",
   "devDependencies": {
     "@parcel/transformer-sass": "2.8.2",
     "@types/d3": "^7.4.0",

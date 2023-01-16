@@ -1,15 +1,11 @@
-import {Model} from "./model"
+import {Model, WithoutId} from "./model"
 import {xy} from "../math/geo"
 import {List, Set} from "immutable"
 import {Vec} from "../math/vec"
 import {updateRoute} from "./mutateRoute"
 
-export function addStation(diagram: Model.Diagram, id: Model.StationId, name: string, position: xy): [Model.Diagram, Model.Station] {
-  let station: Model.Station = {
-    id,
-    name,
-    position,
-  }
+export function addStation(diagram: Model.Diagram, properties: Model.Station): [Model.Diagram, Model.Station] {
+  let station: Model.Station = {...properties}
   return [{
     ...diagram,
     stations: diagram.stations.set(station.id, station),
@@ -17,9 +13,9 @@ export function addStation(diagram: Model.Diagram, id: Model.StationId, name: st
 }
 
 export function updateStation(diagram: Model.Diagram, station: Model.Station,
-                              newProperties: { name?: string, position?: xy }): [Model.Diagram, Model.Station] {
+                              newProperties: Partial<WithoutId<Model.Station>>): [Model.Diagram, Model.Station] {
   let newStation: Model.Station = {
-    ...diagram.stations.get(station.id)!,
+    ...station,
     ...newProperties,
   }
   return [{
@@ -42,7 +38,7 @@ export function removeStations(diagram: Model.Diagram, stationsToRemove: Set<Mod
       .map(it => diagram.stations.get(it)!)
       .filter(it => !stationIdsToRemove.contains(it.id))
       .toList();
-    [diagram, route] = updateRoute(diagram, route, {stations: stationsInRoute})
+    [diagram, route] = updateRoute(diagram, route, {stations: stationsInRoute.map(it => it.id)})
   }
   return removeStationsUnsafely(diagram, stationsToRemove)
 }
@@ -58,16 +54,20 @@ export function mergeStations(diagram: Model.Diagram, stationsToMerge: List<Mode
   let averagePosition: xy = Vec.div(Vec.sum(...stationsToMerge.map(it => it.position)), stationsToMerge.size)
   let averageName: string = stationsToMerge.map(it => it.name).maxBy(it => it.length)!
   let averageId = `${stationsToMerge.get(0)?.id}-merged` as Model.StationId
-  let newStation
-  [diagram, newStation] = addStation(diagram, averageId, averageName, averagePosition)
+  let newStation: Model.Station
+  [diagram, newStation] = addStation(diagram, {
+    id: averageId,
+    name: averageName,
+    position: averagePosition,
+  })
 
   // TODO: only iterate over routes that actually pass through this station
-  for (let route of diagram.routes.valueSeq()) {
+  for (let route of diagram.routes.valueSeq().toList()) {
     let stationsInRoute = route.stations
       .map(it => diagram.stations.get(it)!)
       .map(it => (stationsToMerge.contains(it) ? newStation : it))
       .toList();
-    [diagram, route] = updateRoute(diagram, route, {stations: stationsInRoute})
+    [diagram, route] = updateRoute(diagram, route, {stations: stationsInRoute.map(it => it.id)})
   }
 
   diagram = removeStationsUnsafely(diagram, stationsToMerge.toSet())

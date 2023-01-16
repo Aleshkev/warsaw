@@ -1,7 +1,7 @@
 import {Model} from "../data/model"
 import slugify from "slugify"
 
-// Id of an OSM feature.
+// The id of an OSM feature.
 export type OSMId = number & { __brand: "OSMId" }
 
 export function extractStationName(s: string): string {

@@ -33,3 +33,7 @@ export function logPretty(message: string): string[] {
   const backgroundColor = `#fceffc`
   return [`%c${message}`, `color: ${color}; background-color: ${backgroundColor}; padding: 0 24px`]
 }
+
+export type Mutable<T> = T & {
+  -readonly [P in keyof T]: T[P]
+};

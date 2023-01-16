@@ -82,12 +82,12 @@ export function groupRandomRoutes(diagram: Model.Diagram, maxNPassingLines = 3):
 export function groupCategory(diagram: Model.Diagram, category: string, color: string = "blue"): Model.Diagram {
   console.log(...logPretty(`grouping ${category} routes...`))
 
-  let newGroup
-  [diagram, newGroup] = addRouteGroup(diagram, randomId() as Model.RouteGroupId, category, color, category)
-  for (let route of diagram.routes.valueSeq()) {
+  let newGroup: Model.RouteGroup
+  [diagram, newGroup] = addRouteGroup(diagram, {id: randomId() as Model.RouteGroupId, name: category, color, category})
+  for (let route of diagram.routes.valueSeq().toList()) {
     if (diagram.routeGroups.get(route.group)!.category !== category) continue
 
-    [diagram, route] = updateRoute(diagram, route, {group: newGroup})
+    [diagram, route] = updateRoute(diagram, route, {group: newGroup.id})
   }
   return diagram
 }

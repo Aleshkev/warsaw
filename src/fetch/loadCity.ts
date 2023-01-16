@@ -80,7 +80,11 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
       let pixelPosition = getAveragePixelPosition(rawProjection, geoPositions)
 
       let model
-      [diagram, model] = addStation(diagram, OSMIdToStationId(it.id, name), name, pixelPosition)
+      [diagram, model] = addStation(diagram, {
+        id: OSMIdToStationId(it.id, name),
+        name: name,
+        position: pixelPosition,
+      })
 
       return {...it, name, geoPositions, pixelPosition, model}
     })
@@ -108,12 +112,18 @@ export function loadCity(diagram: Model.Diagram = newEmptyDiagram()): Model.Diag
       if (groupsForRouteNames.has(name)) {
         group = groupsForRouteNames.get(name)
       } else {
-        [diagram, group] = addRouteGroup(diagram, randomId() + slugify(name) as Model.RouteGroupId, name, color ?? "black", category)
+        [diagram, group] = addRouteGroup(diagram, {id: randomId() + slugify(name) as Model.RouteGroupId, name, color: color ?? "black", category})
         groupsForRouteNames = groupsForRouteNames.set(name, group)
       }
 
       let model
-      [diagram, model] = addRoute(diagram, OSMIdToRouteId(it.id, name), name, category === "tram" ? randomColor() : null, group, stations)
+      [diagram, model] = addRoute(diagram, {
+        id: OSMIdToRouteId(it.id, name),
+        name,
+        color: category === "tram" ? randomColor() : null,
+        group: group.id,
+        stations: stations.map(it => it.id),
+      })
 
       return {...it, name, color, category, stationIds, stations, group, model}
     })
